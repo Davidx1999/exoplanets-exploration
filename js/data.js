@@ -1,193 +1,83 @@
 /**
- * data.js — Dados e configurações da visualização de exoplanetas
+ * data.js — Camada de dados e configurações da visualização
  * 
- * Centraliza todos os datasets, configurações de cores,
- * métodos de detecção e mapeia dados reais do CSV.
+ * Importa os dados processados de parsed_planets.js e exporta:
+ * - Configurações visuais dos métodos de detecção
+ * - Dataset completo para o dashboard (allPlanets)
+ * - Dataset amostrado para o storytelling canvas (sampledPlanets → planetsDataset)
+ * - Estatísticas computadas
  */
 
-import { realPlanets, computedStats } from './parsed_planets.js';
+import { allPlanets as rawAll, sampledPlanets as rawSampled, computedStats } from './parsed_planets.js';
+import { getMethodColor, hasCalculatedValues } from './utils.js';
 
 // ============================================
-// CONFIGURAÇÃO DOS MÉTODOS DE DETECÇÃO (Dinâmico)
-// ============================================
-export const METHODS_CONFIG = {
-    'Trânsito': {
-        color: '#60A5FA',
-        label: 'Trânsito',
-        percent: computedStats.methods['Trânsito'] ? computedStats.methods['Trânsito'].percent : '73,9%',
-        desc: 'Mede a diminuição de brilho quando o planeta passa na frente da estrela. O Kepler massificou essa técnica.',
-        year: computedStats.methods['Trânsito'] ? computedStats.methods['Trânsito'].year.toString() : '2002',
-        count: computedStats.methods['Trânsito'] ? computedStats.methods['Trânsito'].count : 4651
-    },
-    'Velocidade Radial': {
-        color: '#F97316',
-        label: 'Velocidade Radial',
-        percent: computedStats.methods['Velocidade Radial'] ? computedStats.methods['Velocidade Radial'].percent : '18,8%',
-        desc: 'Detecta o "bamboleo" gravitacional que um planeta provoca na estrela-mãe. Pioneiro — mas limitado a gigantes próximos.',
-        year: computedStats.methods['Velocidade Radial'] ? computedStats.methods['Velocidade Radial'].year.toString() : '1995',
-        count: computedStats.methods['Velocidade Radial'] ? computedStats.methods['Velocidade Radial'].count : 1181
-    },
-    'Imagem Direta': {
-        color: '#A78BFA',
-        label: 'Imagem Direta',
-        percent: computedStats.methods['Imagem Direta'] ? computedStats.methods['Imagem Direta'].percent : '1,5%',
-        desc: 'Fotografa o planeta diretamente. Funciona apenas para gigantes jovens, distantes e muito luminosos.',
-        year: computedStats.methods['Imagem Direta'] ? computedStats.methods['Imagem Direta'].year.toString() : '2004',
-        count: computedStats.methods['Imagem Direta'] ? computedStats.methods['Imagem Direta'].count : 97
-    },
-    'Micro-lente': {
-        color: '#FACC15',
-        label: 'Micro-lente',
-        percent: computedStats.methods['Micro-lente'] ? computedStats.methods['Micro-lente'].percent : '4,4%',
-        desc: 'Usa a curvatura gravitacional de estrelas para amplificar luz de fundo e revelar planetas em trânsito.',
-        year: computedStats.methods['Micro-lente'] ? computedStats.methods['Micro-lente'].year.toString() : '2004',
-        count: computedStats.methods['Micro-lente'] ? computedStats.methods['Micro-lente'].count : 278
-    },
-    'Tempo de Trânsito': {
-        color: '#F472B6',
-        label: 'Tempo de Trânsito',
-        percent: computedStats.methods['Tempo de Trânsito'] ? computedStats.methods['Tempo de Trânsito'].percent : '0,7%',
-        desc: 'Mede variações periódicas no tempo de trânsito que indicam a presença de outros planetas no sistema.',
-        year: computedStats.methods['Tempo de Trânsito'] ? computedStats.methods['Tempo de Trânsito'].year.toString() : '2011',
-        count: computedStats.methods['Tempo de Trânsito'] ? computedStats.methods['Tempo de Trânsito'].count : 41
-    },
-    'Outros': {
-        color: '#94A3B8',
-        label: 'Outros',
-        percent: computedStats.methods['Outros'] ? computedStats.methods['Outros'].percent : '0,7%',
-        desc: 'Inclui astrometria, pulsar timing e outras técnicas menos comuns de detecção.',
-        year: computedStats.methods['Outros'] ? computedStats.methods['Outros'].year.toString() : '1992',
-        count: computedStats.methods['Outros'] ? computedStats.methods['Outros'].count : 43
-    }
-};
-
-// Métodos usados no storytelling (slides 2) — ordem de apresentação
-export const STORY_METHODS = [
-    {
-        name: 'Velocidade Radial',
-        color: '#F97316',
-        desc: 'Detecta o "bamboleo" gravitacional que um planeta provoca na estrela-mãe. Pioneiro — mas limitado a gigantes próximos.'
-    },
-    {
-        name: 'Trânsito',
-        color: '#60A5FA',
-        desc: 'Mede a diminuição de brilho quando o planeta passa na frente da estrela. O Kepler massificou essa técnica.'
-    },
-    {
-        name: 'Imagem Direta',
-        color: '#A78BFA',
-        desc: 'Fotografa o planeta diretamente. Funciona apenas para gigantes jovens, distantes e muito luminosos.'
-    },
-    {
-        name: 'Micro-lente',
-        color: '#FACC15',
-        desc: 'Usa a curvatura gravitacional de estrelas para amplificar luz de fundo e revelar planetas em trânsito.'
-    }
-];
-
-// ============================================
-// TIPOS DE PLANETAS
-// ============================================
-export const PLANET_TYPES = [
-    'Júpiter Quente',
-    'Super-Terra',
-    'Gigante de Gelo',
-    'Rochoso',
-    'Netuniano',
-    'Terrestre'
-];
-
-// ============================================
-// PLANETAS REAIS NOTÁVEIS (para dashboard)
-// ============================================
-export const NOTABLE_PLANETS = [
-    {
-        name: '51 Pegasi b',
-        star: '51 Pegasi',
-        year: 1995,
-        method: 'Velocidade Radial',
-        type: 'Júpiter Quente',
-        mass: '~150× Terra',
-        dist: '50 anos-luz',
-        temp: '1200 K',
-        note: 'O primeiro exoplaneta confirmado em torno de uma estrela similar ao Sol.'
-    },
-    {
-        name: 'HD 209458 b',
-        star: 'HD 209458',
-        year: 1999,
-        method: 'Trânsito',
-        type: 'Júpiter Quente',
-        mass: '~220× Terra',
-        dist: '159 anos-luz',
-        temp: '1320 K',
-        note: 'Primeiro exoplaneta com atmosfera detectada — vapor d\'água confirmado pelo Hubble.'
-    },
-    {
-        name: 'TRAPPIST-1e',
-        star: 'TRAPPIST-1',
-        year: 2017,
-        method: 'Trânsito',
-        type: 'Terrestre',
-        mass: '~0.77× Terra',
-        dist: '39 anos-luz',
-        temp: '246 K',
-        note: 'Um dos candidatos mais promissores a habitabilidade — na zona habitável de sua estrela.'
-    },
-    {
-        name: 'Kepler-452b',
-        star: 'Kepler-452',
-        year: 2015,
-        method: 'Trânsito',
-        type: 'Super-Terra',
-        mass: '~5× Terra',
-        dist: '1402 anos-luz',
-        temp: '265 K',
-        note: 'Chamado de "primo da Terra". Orbita uma estrela solar em período de 385 dias.'
-    },
-    {
-        name: 'Beta Pic b',
-        star: 'Beta Pictoris',
-        year: 2009,
-        method: 'Imagem Direta',
-        type: 'Gigante de Gelo',
-        mass: '~4300× Terra',
-        dist: '63 anos-luz',
-        temp: '1700 K',
-        note: 'Fotografado diretamente. Orbita dentro de um disco de detritos que pode estar formando luas.'
-    }
-];
-
-// ============================================
-// PROCESSADOR E MAPEADOR DE DADOS REAIS
+// CONFIGURAÇÃO DOS MÉTODOS (para a intro canvas)
 // ============================================
 
-// Gera o dataset global — mapeando o real do CSV para a visualização
-export const planetsDataset = realPlanets.map((p, i) => {
-    // Determinar classificação do planeta dinamicamente
-    let type = 'Rochoso';
-    const radius = p.radius || 1.0;
-    const massVal = p.mass || 1.0;
+// Métodos principais usados no storytelling canvas (4 slides)
+const STORYTELLING_METHODS = ['Velocidade Radial', 'Trânsito', 'Imagem Direta', 'Micro-lente'];
+
+export const METHODS_CONFIG = {};
+
+// Gerar configs dinamicamente a partir das estatísticas
+Object.entries(computedStats.methods).forEach(([method, stats]) => {
+    const color = getMethodColor(method);
+    METHODS_CONFIG[method] = {
+        color,
+        label: method,
+        percent: stats.percent,
+        desc: getMethodDescription(method),
+        year: stats.year ? stats.year.toString() : '—',
+        count: stats.count,
+        pill: hexToRGBA(color, 0.08),
+        pillBorder: hexToRGBA(color, 0.3),
+        zone: getMethodZone(method)
+    };
+});
+
+function getMethodDescription(method) {
+    const descs = {
+        'Trânsito': 'Mede a sutil quebra de luminosidade quando o exoplaneta cruza a frente de sua estrela. O telescópio Kepler liderou esta técnica.',
+        'Velocidade Radial': 'Detecta o sutil desvio gravitacional que um planeta provoca na sua estrela-mãe. Método pioneiro — mas limitado a gigantes gasosos próximos.',
+        'Imagem Direta': 'Isola e capta o brilho infravermelho do exoplaneta diretamente. Eficaz para gigantes jovens, muito massivos e distantes da sua estrela.',
+        'Micro-lente': 'Aproveita a distorção gravitacional de uma estrela de fundo para amplificar a luz, revelando a presença de planetas.',
+        'Tempo de Trânsito': 'Mede variações periódicas no tempo de trânsito que indicam a presença de outros planetas no sistema.',
+        'Pulsar Timing': 'Detecta planetas ao redor de pulsares medindo variações ultrapresas nos pulsos de rádio emitidos.',
+        'Astrometria': 'Mede o deslocamento posicional da estrela causado pela atração gravitacional do planeta.',
+    };
+    return descs[method] || 'Método de detecção de exoplanetas.';
+}
+
+function getMethodZone(method) {
+    const zones = {
+        'Velocidade Radial': { minR: 72, maxR: 156 },
+        'Trânsito':          { minR: 192, maxR: 312 },
+        'Imagem Direta':     { minR: 240, maxR: 336 },
+        'Micro-lente':       { minR: 156, maxR: 240 },
+        'Tempo de Trânsito': { minR: 120, maxR: 216 },
+        'Pulsar Timing':     { minR: 48, maxR: 120 },
+    };
+    return zones[method] || { minR: 48, maxR: 120 };
+}
+
+function hexToRGBA(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// ============================================
+// DATASET PARA STORYTELLING CANVAS (amostrado)
+// ============================================
+
+export const planetsDataset = rawSampled.map((p, i) => {
+    const mc = METHODS_CONFIG[p.methodPT] || METHODS_CONFIG['Outros'] || { color: '#94A3B8' };
+    
+    // Classificação visual orbital
     const orbsmax = p.orbsmax || 1.0;
-
-    if (radius > 6.0 || massVal > 50) {
-        type = orbsmax < 0.15 ? 'Júpiter Quente' : 'Gigante de Gelo';
-    } else if (radius > 2.0 || massVal > 10) {
-        type = 'Netuniano';
-    } else if (radius > 1.25 || massVal > 2) {
-        type = 'Super-Terra';
-    } else {
-        type = Math.random() > 0.5 ? 'Terrestre' : 'Rochoso';
-    }
-
-    // Mapeamento físico orbital real (orbsmax) -> visual (radius) usando escala logarítmica
-    // orbsmax no dataset varia de ~0.005 UA a ~100 UA
-    // Queremos mapear isso para a faixa de raio visual de 35px a 260px
-    const minVal = 0.005;
-    const maxVal = 100;
-    const minR = 35;
-    const maxR = 260;
-
+    const minVal = 0.005, maxVal = 100, minR = 35, maxR = 260;
     let visualRadius = minR;
     if (orbsmax > 0) {
         const logMin = Math.log10(minVal);
@@ -196,30 +86,63 @@ export const planetsDataset = realPlanets.map((p, i) => {
         visualRadius = minR + ((logVal - logMin) / (logMax - logMin)) * (maxR - minR);
     }
 
-    // Tamanho do planeta físico (radius em raios terrestres) -> tamanho visual (clamp [1.5, 7.0])
-    const visualSize = Math.max(1.5, Math.min(7.0, 1.5 + Math.sqrt(radius) * 1.5));
-
-    // Velocidade de rotação baseada na Terceira Lei de Kepler (v proporcional a 1 / sqrt(r))
+    const radiusVal = p.radius || 1.0;
+    const visualSize = Math.max(1.5, Math.min(7.0, 1.5 + Math.sqrt(radiusVal) * 1.5));
     const baseSpeed = 0.05 / Math.sqrt(orbsmax);
     const speed = Math.max(0.012, Math.min(0.13, baseSpeed));
+
+    const distLY = p.dist ? `${Math.round(p.dist * 3.26)} a.l.` : '—';
+    const tempK = p.eqTemp ? `${Math.round(p.eqTemp)} K` : '—';
+
+    let gravity = p.gravity || 9.81;
+    if (!p.gravity) {
+        const typeDefaults = { 'Gigante Gasoso': 24.79, 'Netuniano': 11.0, 'Super-Terra': 15.0 };
+        gravity = typeDefaults[p.type] || 9.81;
+    }
+    if (isNaN(gravity) || gravity <= 0) gravity = 9.81;
+    if (gravity > 1000) gravity = 1000;
+
+    // Notas notáveis
+    const notableNotes = {
+        '51 Peg b': 'Primeiro exoplaneta confirmado a orbitar uma estrela de tipo solar. Inaugurou uma nova era na astrofísica.',
+        'HD 209458 b': 'O primeiro planeta extrasolar cujo trânsito foi observado e a atmosfera analisada de forma direta.',
+        'TRAPPIST-1 e': 'Um dos exoplanetas terrestres mais promissores localizados na zona habitável do seu sistema de anã vermelha.',
+        'Kepler-452 b': 'Frequentemente designado por "primo da Terra". Completa uma órbita ao redor de uma estrela solar em 385 dias.',
+        'Beta Pic b': 'Registado diretamente através de ótica adaptativa de última geração no interior de um anel jovem de detritos cósmicos.',
+        'OGLE-2005-BLG-390L b': 'Um dos mundos mais remotos conhecidos, localizado profundamente na nossa Via Láctea.',
+    };
+    
+    let note = notableNotes[p.name];
+    if (!note) {
+        note = `Exoplaneta do tipo ${p.type}, descoberto em ${p.year} através do método de ${p.methodPT}. Orbita a estrela ${p.star}.`;
+    }
 
     return {
         id: `planet-${i}`,
         name: p.name,
+        star: p.star,
         year: p.year,
-        method: p.method,
-        type,
+        method: p.methodPT,
+        type: p.type,
         mass: p.mass ? `${p.mass.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}× Terra` : '—',
+        dist: distLY,
+        temp: tempK,
+        note,
+        gravity,
         radius: visualRadius,
-        angle: p.angle || Math.random() * Math.PI * 2,
-        color: METHODS_CONFIG[p.method] ? METHODS_CONFIG[p.method].color : '#94A3B8',
+        angle: Math.random() * Math.PI * 2,
+        color: mc.color,
         size: visualSize,
-        speed: speed
+        speed
     };
 });
 
 // ============================================
-// CONSTANTES GLOBAIS (Dinâmicas do CSV)
+// DATASET COMPLETO PARA O DASHBOARD (6.291)
 // ============================================
+
+export { rawAll as allPlanetsRaw };
+export { computedStats };
+
 export const TOTAL_DISCOVERIES = computedStats.totalDiscoveries;
 export const YEAR_RANGE = computedStats.yearRange;
