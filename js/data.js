@@ -6,6 +6,8 @@
  * - Dataset completo para o dashboard (allPlanets)
  * - Dataset amostrado para o storytelling canvas (sampledPlanets → planetsDataset)
  * - Estatísticas computadas
+ * 
+ * Performance: suporte a lazy loading do dataset completo via JSON
  */
 
 import { allPlanets as rawAll, sampledPlanets as rawSampled, computedStats } from './parsed_planets.js';
@@ -146,3 +148,33 @@ export { computedStats };
 
 export const TOTAL_DISCOVERIES = computedStats.totalDiscoveries;
 export const YEAR_RANGE = computedStats.yearRange;
+
+// ============================================
+// LAZY LOADING: Carregar dataset otimizado via JSON
+// ============================================
+
+let _cachedJSONPlanets = null;
+
+/**
+ * Performance: Carrega o dataset completo via JSON otimizado (lazy).
+ * Retorna o dataset do JSON se disponível, senão faz fallback para rawAll.
+ * Chamada típica: no enterDash() antes de inicializar o StarMap.
+ */
+export async function loadAllPlanetsJSON() {
+    if (_cachedJSONPlanets) return _cachedJSONPlanets;
+    
+    try {
+        const resp = await fetch('data/all_planets.json');
+        if (resp.ok) {
+            _cachedJSONPlanets = await resp.json();
+            console.log(`[Performance] Dataset JSON carregado: ${_cachedJSONPlanets.length} planetas`);
+            return _cachedJSONPlanets;
+        }
+    } catch (e) {
+        console.warn('[Performance] Falha ao carregar JSON, usando fallback:', e.message);
+    }
+    
+    // Fallback para o import síncrono
+    return rawAll;
+}
+

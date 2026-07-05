@@ -244,7 +244,56 @@ async function processLineByLine() {
 
     sampledPlanets.sort((a, b) => (a.year || 0) - (b.year || 0));
 
-    // Escrever o arquivo JS de saída
+    // Escrever os arquivos JSON de saída (separados para lazy loading)
+    // Performance: 3 arquivos separados em vez de 1 JS monolítico de 2.6MB
+    const dataFolder = path.join(__dirname, 'data');
+    if (!fs.existsSync(dataFolder)) {
+        fs.mkdirSync(dataFolder, { recursive: true });
+    }
+
+    // 1. stats.json — Estatísticas computadas (~1 KB)
+    const statsPath = path.join(dataFolder, 'stats.json');
+    fs.writeFileSync(statsPath, JSON.stringify(computedStats));
+    console.log(`Gerado: ${statsPath}`);
+
+    // 2. sampled.json — Amostra para storytelling (~100 KB)
+    const sampledPath = path.join(dataFolder, 'sampled.json');
+    fs.writeFileSync(sampledPath, JSON.stringify(sampledPlanets));
+    console.log(`Gerado: ${sampledPath}`);
+
+    // 3. all_planets.json — Dataset completo para o dashboard
+    // Performance: truncar valores numéricos e remover campos desnecessários
+    const compactPlanets = uniquePlanets.map(p => ({
+        name: p.name,
+        star: p.star,
+        year: p.year,
+        method: p.method,
+        methodPT: p.methodPT,
+        mass: p.mass !== null ? Math.round(p.mass * 100) / 100 : null,
+        radius: p.radius !== null ? Math.round(p.radius * 100) / 100 : null,
+        orbper: p.orbper !== null ? Math.round(p.orbper * 100) / 100 : null,
+        orbsmax: p.orbsmax !== null ? Math.round(p.orbsmax * 1000) / 1000 : null,
+        dist: p.dist !== null ? Math.round(p.dist * 100) / 100 : null,
+        distLY: p.distLY !== null ? Math.round(p.distLY * 100) / 100 : null,
+        starTemp: p.starTemp,
+        numPlanets: p.numPlanets,
+        eqTemp: p.eqTemp,
+        type: p.type,
+        typeEN: p.typeEN,
+        gravity: p.gravity !== null ? Math.round(p.gravity * 100) / 100 : null,
+        decade: p.decade
+    }));
+
+    const allPath = path.join(dataFolder, 'all_planets.json');
+    fs.writeFileSync(allPath, JSON.stringify(compactPlanets));
+    console.log(`Gerado: ${allPath}`);
+
+    // Legacy: manter o parsed_planets.js para compatibilidade (caso necessário)
+    const jsFolder = path.dirname(outputFilePath);
+    if (!fs.existsSync(jsFolder)) {
+        fs.mkdirSync(jsFolder, { recursive: true });
+    }
+
     const fileContent = `/**
  * parsed_planets.js — Dados processados do NASA Exoplanet Archive
  * Gerado automaticamente por process_csv.js
@@ -253,12 +302,6 @@ export const computedStats = ${JSON.stringify(computedStats, null, 2)};
 export const allPlanets = ${JSON.stringify(uniquePlanets)};
 export const sampledPlanets = ${JSON.stringify(sampledPlanets)};
 `;
-
-    // Garantir que a pasta 'js' existe
-    const jsFolder = path.dirname(outputFilePath);
-    if (!fs.existsSync(jsFolder)) {
-        fs.mkdirSync(jsFolder, { recursive: true });
-    }
 
     fs.writeFileSync(outputFilePath, fileContent);
     console.log(`Sucesso! Gerado arquivo em: ${outputFilePath}`);

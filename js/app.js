@@ -12,11 +12,8 @@
 import { METHODS_CONFIG, planetsDataset, allPlanetsRaw, computedStats, TOTAL_DISCOVERIES, YEAR_RANGE } from './data.js';
 import { hasCalculatedValues, getMethodColor, getTypeColor, formatNumber } from './utils.js';
 import { PlanetCard } from './planet-card.js';
-import { SizeBarChart, TimelineChart, MethodBarChart } from './charts.js';
 import { StarMap } from './star-map.js';
-import { Scatterplot } from './scatterplot.js';
-import { ParallelCoords } from './parallel-coords.js';
-import { NetworkGraph } from './network-graph.js';
+import { buildZoomableBarChart, buildConnectedScatter, buildBubbleChart, updateBubbleChart, renderChips, updateBars, renderFilters, setupTimelineModeToggle, setupBarChartModeToggle, setupPlayerControls, getBarChartMode, cleanupPlayer } from './mini-charts.js';
 
 // ============================================
 // ESTADO GLOBAL + PUB/SUB
@@ -30,7 +27,13 @@ const state = {
     selectedType: 'all',
     searchQuery: '',
     currentPage: 1,
-    phase: 'canvas' // 'canvas' | 'dashboard'
+    phase: 'canvas', // 'canvas' | 'dashboard'
+    rightPanelMode: 'type', // 'type' | 'method'
+    // Chart-driven highlights (visual only, not data filters)
+    highlightType: null,   // e.g. 'Gigante Gasoso'
+    highlightYear: null,   // e.g. 2014
+    timelineYear: null,     // Sync for the connected scatterplot
+    timelineStartYear: null // Start year for range filtering
 };
 
 const listeners = new Set();
@@ -43,12 +46,7 @@ function dispatch() { listeners.forEach(fn => fn(state)); }
 
 let planetCard = null;
 let starMap = null;
-let sizeBarChart = null;
-let scatterPlot = null;
-let timelineChart = null;
-let networkGraph = null;
-let methodBarChart = null;
-let parallelCoords = null;
+let panelOpen = true;
 
 // ============================================
 // FASE 1 — INTRO CANVAS (Preservada da v1)
@@ -261,7 +259,7 @@ function drawSolarSystem(time, opacity) {
 
         if (opacity > 0.2 && (currentZoom > 0.7 || isHighlighted)) {
             GX.fillStyle = isHighlighted ? '#fff' : `rgba(255,255,255,${0.45 * opacity * recoilFactor})`;
-            GX.font = isHighlighted ? `bold ${Math.max(9, 11 * currentZoom)}px 'Inter'` : `${Math.max(8, 9 * currentZoom)}px 'Inter'`;
+            GX.font = isHighlighted ? `bold ${Math.max(9, 11 * currentZoom)}px 'Public Sans'` : `${Math.max(8, 9 * currentZoom)}px 'Public Sans'`;
             GX.textAlign = 'center';
             if (recoilFactor > 0.1) GX.fillText(p.name, px, py - planetSize - (isHighlighted ? 8 : 4));
         }
@@ -437,6 +435,17 @@ function showStory(idx, prevProgress) {
     if (hintEl) {
         hintEl.classList.toggle('hide', idx === 4);
     }
+
+    const btnEnter = document.getElementById('btn-enter-dash');
+    if (btnEnter) {
+        if (idx === 4) {
+            btnEnter.style.opacity = '1';
+            btnEnter.style.pointerEvents = 'all';
+        } else {
+            btnEnter.style.opacity = '0';
+            btnEnter.style.pointerEvents = 'none';
+        }
+    }
 }
 
 function goToProgress(nextProgress) {
@@ -530,7 +539,11 @@ function updateScalePop(idx) {
 
 // -- Animation Loop --
 function loop(time) {
-    if (state.phase !== 'canvas') { rafId = requestAnimationFrame(loop); return; }
+    // Performance: parar completamente quando não estamos na fase canvas
+    if (state.phase !== 'canvas') return;
+    // Performance: parar quando a tab está oculta
+    if (document.hidden) { rafId = requestAnimationFrame(loop); return; }
+
     t = time;
     scrollProgress += (targetProgress - scrollProgress) * 0.025;
     currentZoom += (targetZoom - currentZoom) * transitionSpeedZoom;
@@ -566,11 +579,24 @@ function loop(time) {
 }
 
 // ============================================
+// HIDE LOADING SCREEN
+// ============================================
+setTimeout(() => {
+    const loader = document.getElementById('loading-screen');
+    if (loader) {
+        loader.classList.add('hidden');
+        setTimeout(() => loader.style.display = 'none', 800);
+    }
+}, 500);
+
+// ============================================
 // FASE 2 — TRANSIÇÕES ENTRE FASES
 // ============================================
 
 window.enterDash = function () {
     state.phase = 'dashboard';
+    // Performance: parar o loop de canvas da Fase 1
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     GW.style.display = 'none';
 
     const dashEl = document.getElementById('dashboard');
@@ -581,6 +607,8 @@ window.enterDash = function () {
     // Inicializar dashboard (lazy — só na primeira vez)
     if (!starMap) {
         initDashboard();
+    } else {
+        starMap.animateArrival();
     }
 };
 
@@ -595,6 +623,9 @@ window.exitDash = function () {
 
     curProgress = 4;
     showStory(4, 4);
+
+    // Performance: reiniciar o loop de canvas da Fase 1
+    if (!rafId) rafId = requestAnimationFrame(loop);
 };
 
 window.setOrbitMode = function (mode) {
@@ -608,37 +639,52 @@ window.selectScalePlanet = function (idx) { if (selectedPlanetIdx === idx) { sel
 
 window.selectPlanet = function (planet) {
     state.selectedPlanet = planet;
+    const btnClearSel = document.getElementById('btn-clear-selection');
+    const tabBtnFicha = document.getElementById('tab-btn-ficha');
+    
     if (planet) {
         planetCard.show(planet);
+        if (tabBtnFicha) tabBtnFicha.classList.remove('disabled');
+        openPanel('ficha');
+        if (btnClearSel) btnClearSel.style.display = 'flex';
     } else {
         planetCard.hide();
+        if (tabBtnFicha) tabBtnFicha.classList.add('disabled');
+        if (btnClearSel) btnClearSel.style.display = 'none';
+        window.openPanel('analise');
     }
     
-    // Sincronizar destaque nos outros gráficos
-    if (starMap) starMap.highlight(planet);
-    if (scatterPlot) scatterPlot.select(planet);
-    if (parallelCoords) parallelCoords.highlight(planet);
-    if (sizeBarChart) sizeBarChart.selectType(planet ? planet.type : 'all');
-    if (methodBarChart) methodBarChart.selectMethod(planet ? planet.methodPT : 'all');
-    if (timelineChart) timelineChart.selectMethod(planet ? planet.methodPT : 'all');
-
-    updateResetButton();
+    if (starMap) starMap.highlight(planet, true);
+    
+    applyFilters();
     dispatch();
 };
 
 window.deselectPlanet = function () {
     state.selectedPlanet = null;
     if (planetCard) planetCard.hide();
+    const btnClearSel = document.getElementById('btn-clear-selection');
+    if (btnClearSel) btnClearSel.style.display = 'none';
     
-    if (starMap) starMap.highlight(null);
-    if (scatterPlot) scatterPlot.select(null);
-    if (parallelCoords) parallelCoords.highlight(null);
-    if (sizeBarChart) sizeBarChart.selectType('all');
-    if (methodBarChart) methodBarChart.selectMethod('all');
-    if (timelineChart) timelineChart.selectMethod('all');
+    const tabBtnFicha = document.getElementById('tab-btn-ficha');
+    if (tabBtnFicha) tabBtnFicha.classList.add('disabled');
     
-    updateResetButton();
+    window.openPanel('analise');
+    
+    if (starMap) starMap.highlight(null, true);
+    
+    applyFilters();
     dispatch();
+};
+
+window.starMapHighlightByFilter = function (filterFn) {
+    if (starMap) {
+        if (filterFn) {
+            starMap.highlightByFilter(filterFn);
+        } else {
+            starMap.clearHighlight();
+        }
+    }
 };
 
 window.resetFilters = function () {
@@ -665,205 +711,355 @@ window.resetFilters = function () {
 // FASE 3 — DASHBOARD (Figma)
 // ============================================
 
-function initDashboard() {
-    // Preencher filtros
-    populateFilters();
+// Side Panel Tab Logic
+window.setTab = function(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    
+    const btn = document.querySelector(`[data-tab="${tabId}"]`);
+    if(btn) btn.classList.add('active');
+    
+    const pane = document.getElementById(`pane-${tabId}`);
+    if(pane) pane.classList.add('active');
+    
+    // Clear badge and re-render charts so they get correct dimensions
+    if(tabId === 'analise') {
+        const badge = document.getElementById('analise-badge');
+        if(badge) badge.classList.remove('show');
+        applyFilters();
+    }
+};
 
-    // Instanciar ficha lateral
+window.openPanel = function(tabId = null) {
+    panelOpen = true;
+    const panel = document.getElementById('side-panel');
+    if(panel) panel.classList.add('visible');
+    if(tabId) window.setTab(tabId);
+};
+
+function initDashboard() {
     planetCard = new PlanetCard();
 
-    // Instanciar gráficos com pequeno delay
     setTimeout(() => {
-        // 0. Mapa Estelar
         starMap = new StarMap('star-map-container', allPlanetsRaw, {
             onSelect: (planet) => {
                 selectPlanet(planet);
             }
         });
 
-        // 1. Tipo de Planeta Bar Chart
-        sizeBarChart = new SizeBarChart('size-chart', allPlanetsRaw);
-
-        // 2. Scatterplot de Massa x Raio
-        scatterPlot = new Scatterplot('scatter-container', allPlanetsRaw, {
-            onSelect: (planet) => {
-                selectPlanet(planet);
-            }
+        setupTimelineModeToggle(() => {
+            applyFilters();
         });
 
-        // 3. Timeline de Descobertas
-        timelineChart = new TimelineChart('timeline-chart', allPlanetsRaw);
+        setupBarChartModeToggle(() => {
+            state.highlightType = null;
+            state.highlightYear = null;
+            applyFilters();
+        });
 
-        // 4. Rede de Relações
-        networkGraph = new NetworkGraph('network-graph', allPlanetsRaw);
-
-        // 5. Quantidade por Método
-        methodBarChart = new MethodBarChart('method-bar-chart', allPlanetsRaw);
-
-        // 6. Coordenadas Paralelas
-        parallelCoords = new ParallelCoords('parallel-coords', allPlanetsRaw, {
-            onBrush: (brushes) => {
-                // Brushing do coordenadas paralelas pode opcionalmente filtrar localmente,
-                // mas para evitar sobrecarga de estado síncrona, apenas destacamos as linhas.
+        setupPlayerControls(allPlanetsRaw, (year, startYear = null) => {
+            state.timelineYear = year;
+            state.timelineStartYear = startYear;
+            updateBubbleChart(year, startYear);
+            if (starMap) starMap.setTimeLimit(year, startYear);
+            
+            // Also update connected scatterplot and bar chart
+            let filtered = allPlanetsRaw;
+            if (state.selectedMethod !== 'all') filtered = filtered.filter(d => d.methodPT === state.selectedMethod);
+            if (state.selectedType !== 'all') filtered = filtered.filter(d => d.type === state.selectedType);
+            if (state.searchQuery) {
+                const q = state.searchQuery.toLowerCase();
+                filtered = filtered.filter(d => d.name.toLowerCase().includes(q) || d.star.toLowerCase().includes(q));
             }
+
+            // Bar chart (syncs with timeline year)
+            const barMode = getBarChartMode();
+            const barClickHandler = (cat) => {
+                state.highlightType = (state.highlightType === cat) ? null : cat;
+                state.highlightYear = null;
+                applyFilters();
+            };
+            buildZoomableBarChart(filtered, state.highlightType, barClickHandler, state.timelineYear, false, startYear);
+
+            let syncData = filtered;
+            if (state.highlightType) {
+                if (barMode === 'type') {
+                    syncData = syncData.filter(d => d.type === state.highlightType);
+                } else {
+                    syncData = syncData.filter(d => d.methodPT === state.highlightType);
+                }
+            }
+            buildConnectedScatter(syncData, state.selectedPlanet, state.timelineYear, false, startYear);
+            updatePlanetCounter();
         });
 
         applyFilters();
+        starMap.animateArrival();
     }, 100);
 
-    // Bind filtros dropdown
-    document.getElementById('filter-method').addEventListener('change', (e) => {
-        state.selectedMethod = e.target.value;
-        state.currentPage = 1;
-        applyFilters();
-    });
+    // Setup UI Events
+    const btnFloat = document.getElementById('btn-analytics-float');
+    if(btnFloat) btnFloat.onclick = () => window.openPanel('analise');
+    
+    const btnSeeAn = document.getElementById('btn-see-analytics');
+    if(btnSeeAn) btnSeeAn.onclick = () => window.openPanel('analise');
+    
+    const btnFicha = document.getElementById('tab-btn-ficha');
+    if(btnFicha) {
+        btnFicha.onclick = () => {
+            if (!btnFicha.classList.contains('disabled')) window.setTab('ficha');
+        };
+        btnFicha.classList.add('disabled');
+    }
+    
+    const btnAnalise = document.getElementById('tab-btn-analise');
+    if(btnAnalise) btnAnalise.onclick = () => window.setTab('analise');
+    
+    const btnHome = document.getElementById('btn-home');
+    if(btnHome) btnHome.onclick = window.exitDash;
 
-    document.getElementById('filter-type').addEventListener('change', (e) => {
-        state.selectedType = e.target.value;
-        state.currentPage = 1;
-        applyFilters();
-    });
+    // Clear selection button inside Ficha details
+    const btnClearSel = document.getElementById('btn-clear-selection');
+    if (btnClearSel) {
+        btnClearSel.onclick = () => {
+            if (window.selectPlanet) window.selectPlanet(null);
+        };
+    }
 
-    document.getElementById('filter-year').addEventListener('change', (e) => {
-        state.selectedYear = e.target.value;
-        state.currentPage = 1;
-        applyFilters();
-    });
+    // Collapse right side panel when clicking the header (ignoring mode toggle clicks)
+    const panelTypes = document.getElementById('right-types-panel');
+    const panelHeader = document.querySelector('.right-panel-header');
+    if (panelHeader && panelTypes) {
+        panelHeader.onclick = (e) => {
+            if (e.target.closest('.panel-mode-toggle')) return;
+            panelTypes.classList.toggle('collapsed');
+        };
+    }
 
-    document.getElementById('filter-dist').addEventListener('change', (e) => {
-        state.selectedDistance = e.target.value;
-        state.currentPage = 1;
-        applyFilters();
-    });
-
-    // Iniciar botão de reset desabilitado
-    updateResetButton();
-}
-
-function populateFilters() {
-    const methodSelect = document.getElementById('filter-method');
-    const typeSelect = document.getElementById('filter-type');
-
-    // Métodos
-    const methods = [...new Set(allPlanetsRaw.map(d => d.methodPT))].sort();
-    methods.forEach(m => {
-        const opt = document.createElement('option');
-        opt.value = m;
-        opt.textContent = m;
-        methodSelect.appendChild(opt);
-    });
-
-    // Tipos
-    const types = [...new Set(allPlanetsRaw.map(d => d.type))].filter(t => t !== 'Desconhecido').sort();
-    types.forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = t;
-        opt.textContent = t;
-        typeSelect.appendChild(opt);
-    });
-}
-
-// Handler de busca textual
-window.handleTableSearch = function () {
-    const searchVal = document.getElementById('table-search').value;
-    state.searchQuery = searchVal;
-    state.currentPage = 1;
-    applyFilters();
-};
-
-// Handler de mudança de página
-window.changeTablePage = function (dir) {
-    state.currentPage += dir;
-    applyFilters();
-};
-
-window.goToTablePage = function (page) {
-    state.currentPage = page;
-    applyFilters();
-};
-
-function updateKPIs(data) {
-    const uniqueStars = new Set(data.map(d => d.star)).size;
-    const earthLike = data.filter(d => d.type === 'Terrestre').length;
-    const uniqueMethods = new Set(data.map(d => d.methodPT)).size;
-
-    const elPlanets = document.getElementById('kpi-planets');
-    const elSystems = document.getElementById('kpi-systems');
-    const elEarthlike = document.getElementById('kpi-earthlike');
-    const elMethods = document.getElementById('kpi-methods');
-
-    if (elPlanets) elPlanets.textContent = data.length.toLocaleString('pt-BR');
-    if (elSystems) elSystems.textContent = uniqueStars.toLocaleString('pt-BR');
-    if (elEarthlike) elEarthlike.textContent = earthLike.toLocaleString('pt-BR');
-    if (elMethods) elMethods.textContent = uniqueMethods.toLocaleString('pt-BR');
-}
-
-function updateResetButton() {
-    const isFiltering = 
-        state.selectedMethod !== 'all' ||
-        state.selectedType !== 'all' ||
-        state.selectedYear !== 'all' ||
-        state.selectedDistance !== 'all' ||
-        state.selectedPlanet !== null;
-
-    const resetBtn = document.getElementById('btn-reset-filters');
-    if (resetBtn) {
-        resetBtn.disabled = !isFiltering;
-        resetBtn.classList.toggle('disabled', !isFiltering);
+    // Right panel mode toggle (Tipo / Método)
+    const modeToggleType = document.getElementById('mode-toggle-type');
+    const modeToggleMethod = document.getElementById('mode-toggle-method');
+    if (modeToggleType && modeToggleMethod) {
+        modeToggleType.onclick = (e) => {
+            e.stopPropagation();
+            if (state.rightPanelMode === 'type') return;
+            state.rightPanelMode = 'type';
+            modeToggleType.classList.add('active');
+            modeToggleMethod.classList.remove('active');
+            applyFilters();
+        };
+        modeToggleMethod.onclick = (e) => {
+            e.stopPropagation();
+            if (state.rightPanelMode === 'method') return;
+            state.rightPanelMode = 'method';
+            modeToggleMethod.classList.add('active');
+            modeToggleType.classList.remove('active');
+            applyFilters();
+        };
     }
 }
 
-function applyFilters() {
+window.removeFilter = function(key) {
+    if (key === 'method') state.selectedMethod = 'all';
+    if (key === 'type') state.selectedType = 'all';
+    if (key === 'search') state.searchQuery = '';
+    applyFilters();
+};
+
+window.clearAllFilters = function() {
+    state.selectedMethod = 'all';
+    state.selectedType = 'all';
+    state.searchQuery = '';
+    state.highlightType = null;
+    state.highlightYear = null;
+    state.selectedPlanet = null;
+
+    if (planetCard) planetCard.hide();
+    const btnClearSel = document.getElementById('btn-clear-selection');
+    if (btnClearSel) btnClearSel.style.display = 'none';
+
+    const tabBtnFicha = document.getElementById('tab-btn-ficha');
+    if (tabBtnFicha) tabBtnFicha.classList.add('disabled');
+    
+    window.openPanel('analise');
+
+    if (starMap) {
+        starMap.clearHighlight();
+        starMap.highlight(null);
+        starMap.resetZoom();
+    }
+
+    applyFilters(true);
+};
+
+function applyFilters(forceAnimate = false) {
     let filtered = allPlanetsRaw;
 
-    // 1. Filtro de método
-    if (state.selectedMethod !== 'all') {
-        filtered = filtered.filter(d => d.methodPT === state.selectedMethod);
-    }
-
-    // 2. Filtro de tipo
-    if (state.selectedType !== 'all') {
-        filtered = filtered.filter(d => d.type === state.selectedType);
-    }
-
-    // 3. Filtro de ano
-    if (state.selectedYear !== 'all') {
-        const [minY, maxY] = state.selectedYear.split('-').map(Number);
-        filtered = filtered.filter(d => d.year >= minY && d.year <= maxY);
-    }
-
-    // 4. Filtro de distância
-    if (state.selectedDistance !== 'all') {
-        const [minD, maxD] = state.selectedDistance.split('-').map(Number);
-        filtered = filtered.filter(d => d.distLY !== null && d.distLY >= minD && d.distLY <= maxD);
-    }
-
-    // 5. Filtro de busca textual
+    if (state.selectedMethod !== 'all') filtered = filtered.filter(d => d.methodPT === state.selectedMethod);
+    if (state.selectedType !== 'all') filtered = filtered.filter(d => d.type === state.selectedType);
     if (state.searchQuery) {
         const q = state.searchQuery.toLowerCase();
         filtered = filtered.filter(d => d.name.toLowerCase().includes(q) || d.star.toLowerCase().includes(q));
     }
 
-    // Atualizar KPIs
-    updateKPIs(filtered);
-
-    // Atualizar gráficos do dashboard
-    if (starMap) starMap.updateData(filtered);
-    if (sizeBarChart) {
-        sizeBarChart.updateData(filtered);
-        sizeBarChart.selectType(state.selectedPlanet ? state.selectedPlanet.type : state.selectedType);
-    }
-    if (scatterPlot) scatterPlot.updateData(filtered);
-    if (timelineChart) {
-        timelineChart.updateData(filtered);
-        timelineChart.selectMethod(state.selectedPlanet ? state.selectedPlanet.methodPT : state.selectedMethod);
-    }
-    if (methodBarChart) {
-        methodBarChart.updateData(filtered);
-        methodBarChart.selectMethod(state.selectedPlanet ? state.selectedPlanet.methodPT : state.selectedMethod);
+    if (starMap) {
+        starMap.colorMode = state.rightPanelMode;
+        starMap.updateData(filtered);
     }
 
+    // Apply chart-driven highlight on star-map (visual only)
+    applyChartHighlight();
+
+    // Update Focus Note in Analise
+    const fnote = document.getElementById('focus-note');
+    const fnoteName = document.getElementById('focus-note-name');
+    const fnoteDot = document.getElementById('focus-note-dot');
+    
+    if (state.selectedPlanet) {
+        if(fnote) fnote.style.display = 'flex';
+        if(fnoteName) fnoteName.textContent = state.selectedPlanet.name;
+        if(fnoteDot) fnoteDot.style.background = getTypeColor(state.selectedPlanet.type);
+    } else {
+        if(fnote) fnote.style.display = 'none';
+    }
+
+    renderFilters(state, window.removeFilter, window.clearAllFilters);
+    
+    // Right panel chips (simplified — no counts)
+    renderChips(filtered, state.selectedMethod, state.selectedType, (item, mode) => {
+        if (mode === 'type') {
+            state.selectedType = (state.selectedType === item) ? 'all' : item;
+        } else {
+            state.selectedMethod = (state.selectedMethod === item) ? 'all' : item;
+        }
+        state.highlightType = null;
+        state.highlightYear = null;
+        applyFilters();
+    });
+    
+    // Horizontal Bar Chart (Tipo or Método based on bar chart mode toggle)
+    const barMode = getBarChartMode();
+    if (barMode === 'type') {
+        buildZoomableBarChart(filtered, state.highlightType, (type) => {
+            state.highlightType = (state.highlightType === type) ? null : type;
+            state.highlightYear = null;
+            applyFilters();
+        }, state.timelineYear, forceAnimate, state.timelineStartYear);
+    } else {
+        buildZoomableBarChart(filtered, state.highlightType, (method) => {
+            // When in method mode, highlightType acts as a generic highlight value
+            state.highlightType = (state.highlightType === method) ? null : method;
+            state.highlightYear = null;
+            applyFilters();
+        }, state.timelineYear, forceAnimate, state.timelineStartYear);
+    }
+
+    // Filtra dados para sincronizar os gráficos abaixo
+    let syncData = filtered;
+    if (state.highlightType) {
+        if (barMode === 'type') {
+            syncData = syncData.filter(d => d.type === state.highlightType);
+        } else {
+            syncData = syncData.filter(d => d.methodPT === state.highlightType);
+        }
+    }
+
+    // Connected Scatterplot (discoveries over time by type)
+    buildConnectedScatter(syncData, state.selectedPlanet, state.timelineYear, forceAnimate, state.timelineStartYear);
+
+    // Bubble Chart (keeps its own player state, just rebuild structure)
+    buildBubbleChart(syncData);
+    
+    // Update global reset button state
     updateResetButton();
+    updatePlanetCounter();
+}
+
+// Apply visual highlight on star-map based on chart interaction state
+window.applyChartHighlight = function() {
+    if (!starMap) return;
+
+    if (state.highlightType) {
+        const barMode = getBarChartMode();
+        if (barMode === 'type') {
+            starMap.highlightByFilter(d => d.type === state.highlightType);
+        } else {
+            starMap.highlightByFilter(d => d.methodPT === state.highlightType);
+        }
+    } else if (state.highlightYear) {
+        starMap.highlightByFilter(d => d.year === state.highlightYear);
+    } else if (state.selectedPlanet) {
+        starMap.highlight(state.selectedPlanet, true);
+    } else {
+        starMap.clearHighlight();
+    }
+}
+
+window.toggleHighlightYear = function(year) {
+    state.highlightYear = (state.highlightYear === year) ? null : year;
+    state.highlightType = null;
+    applyFilters();
+}
+
+function applyChartHighlight() {
+    window.applyChartHighlight();
+}
+
+window.updatePlanetCounter = function() {
+    const elSample = document.getElementById('counter-sample');
+    const elTotal = document.getElementById('counter-total');
+    if (!elSample || !elTotal) return;
+
+    elTotal.textContent = allPlanetsRaw.length.toLocaleString('pt-BR');
+
+    let f = allPlanetsRaw;
+    if (state.selectedMethod !== 'all') f = f.filter(d => d.methodPT === state.selectedMethod);
+    if (state.selectedType !== 'all') f = f.filter(d => d.type === state.selectedType);
+    if (state.searchQuery) {
+        const q = state.searchQuery.toLowerCase();
+        f = f.filter(d => d.name.toLowerCase().includes(q) || d.star.toLowerCase().includes(q));
+    }
+    
+    if (state.highlightType) {
+        const barMode = getBarChartMode();
+        if (barMode === 'type') {
+            f = f.filter(d => d.type === state.highlightType);
+        } else {
+            f = f.filter(d => d.methodPT === state.highlightType);
+        }
+    }
+
+    if (state.timelineYear !== null) {
+        if (state.timelineStartYear !== null) {
+            f = f.filter(d => d.year >= state.timelineStartYear && d.year <= state.timelineYear);
+        } else {
+            f = f.filter(d => d.year <= state.timelineYear);
+        }
+    }
+
+    elSample.textContent = f.length.toLocaleString('pt-BR');
+}
+
+function updateResetButton() {
+    const btn = document.getElementById('btn-reset-charts');
+    if (!btn) return;
+    
+    const hasFilter = state.selectedMethod !== 'all' || 
+                      state.selectedType !== 'all' || 
+                      state.searchQuery !== '' || 
+                      state.selectedPlanet !== null ||
+                      state.highlightType !== null ||
+                      state.highlightYear !== null;
+                      
+    if (hasFilter) {
+        btn.removeAttribute('disabled');
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+    } else {
+        btn.setAttribute('disabled', 'true');
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'default';
+    }
 }
 
 // ============================================

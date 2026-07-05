@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Share+Tech+Mono&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Share+Tech+Mono&display=swap"
         rel="stylesheet">
 
     <!-- D3.js -->
@@ -23,6 +23,47 @@
 </head>
 
 <body>
+
+    <!-- ===================================================== -->
+    <!-- TELA DE CARREGAMENTO (LIGHT SPEED)                    -->
+    <!-- ===================================================== -->
+    <div id="loading-screen">
+        <canvas id="warp-canvas"></canvas>
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Processando milhares de exoplanetas...</div>
+        </div>
+    </div>
+    <script>
+        (function () {
+            const canvas = document.getElementById('warp-canvas');
+            const ctx = canvas.getContext('2d');
+            let w = canvas.width = window.innerWidth;
+            let h = canvas.height = window.innerHeight;
+            const stars = [];
+            for (let i = 0; i < 400; i++) {
+                stars.push({ x: Math.random() * w - w / 2, y: Math.random() * h - h / 2, z: Math.random() * w });
+            }
+            function draw() {
+                if (canvas.offsetParent === null) return; // Parar se escondido
+                ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = '#fff';
+                const cx = w / 2, cy = h / 2;
+                for (let s of stars) {
+                    s.z -= 8;
+                    if (s.z <= 0) { s.x = Math.random() * w - w / 2; s.y = Math.random() * h - h / 2; s.z = w; }
+                    const sx = cx + (s.x / s.z) * w;
+                    const sy = cy + (s.y / s.z) * w;
+                    const size = (1 - s.z / w) * 3;
+                    ctx.fillRect(sx, sy, size, size);
+                }
+                requestAnimationFrame(draw);
+            }
+            draw();
+            window.addEventListener('resize', () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; });
+        })();
+    </script>
 
     <!-- ===================================================== -->
     <!-- FASE 1 — INTRO CANVAS + SCROLLYTELLING                -->
@@ -153,7 +194,8 @@
                 <div class="story-title">O Cosmos Vazio</div>
                 <div class="story-sub">
                     Até 1992, a humanidade não conhecia nenhum planeta fora do Sistema Solar.
-                    Os primeiros exoplanetas foram detectados pelo método de <strong>Pulsar Timing</strong> (1992) ao
+                    Os primeiros exoplanetas catalogados foram detectados pelo método de <strong>Pulsar Timing</strong>
+                    (1992) ao
                     redor de uma estrela morta (pulsar).
                     Logo depois, em 1995, o método de <strong>Velocidade Radial</strong> detectou o primeiro exoplaneta
                     orbitando uma estrela como o Sol, revelando gigantes gasosos massivos orbitando perigosamente
@@ -184,9 +226,10 @@
                         Gravitacionais</strong> (ampliação da luz por lentes gravitacionais no centro da galáxia) nos
                     ajudam a preencher as lacunas do cosmos.
                 </div>
-                <button class="enter-btn" id="btn-enter-dash" onclick="enterDash()"
-                    style="width: 100%; margin-top: 15px;">Abrir Dashboard →</button>
             </div>
+
+            <button class="enter-btn" id="btn-enter-dash" onclick="enterDash()"
+                style="position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 100; margin: 0; background: var(--accent-blue); color: #fff; box-shadow: 0 4px 15px rgba(96, 165, 250, 0.4); border-color: transparent; opacity: 0; pointer-events: none; transition: opacity 0.6s;">Explorar mais sobre Exoplanetas →</button>
 
             <div class="hint" id="hint">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -224,244 +267,331 @@
     <!-- FASE 2 — DASHBOARD SANDBOX                             -->
     <!-- ===================================================== -->
     <div id="dashboard" class="dash-hidden">
-        <!-- Header do Dashboard -->
-        <header id="dash-header">
-            <div class="dash-header-left">
-                <button class="back-btn" id="btn-back" onclick="exitDash()">← Storytelling</button>
-                <h1 class="dash-title">EXPLORANDO NOVOS MUNDOS</h1>
-                <span class="dash-subtitle">Uma análise visual da descoberta de exoplanetas</span>
+
+        <header id="dash-header"
+            style="position:absolute; top:0; left:0; right:0; height:70px; display:flex; justify-content:space-between; align-items:center; padding:0 28px; background:#000000; z-index:30; border-bottom:1px solid transparent; border-image:linear-gradient(to right, #141415, #505054 50%, #141415) 1; pointer-events:none;">
+            <div class="brand-logo"
+                style="display: flex; flex-direction: column; line-height: 1.0; pointer-events: auto; font-family: 'Public Sans', sans-serif;">
+                <span
+                    style="font-size: 20px; font-weight: 900; letter-spacing: 0.05em; color: var(--text);">EXOPLANETS</span>
+                <span
+                    style="font-size: 10px; font-weight: 500; letter-spacing: 0.35em; color: var(--accent); margin-top: 2px;">EXPLORATION</span>
+            </div>
+
+            <!-- Planet Counter -->
+            <div id="planet-counter" style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: auto;">
+                <div style="font-family: var(--font-sans); font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px;">Planetas na Amostra</div>
+                <div style="display: flex; align-items: baseline; gap: 4px;">
+                    <span id="counter-sample" style="font-family: var(--font-mono); font-size: 24px; font-weight: 700; color: var(--accent-blue); text-shadow: 0 0 8px rgba(96, 165, 250, 0.3);">0</span>
+                    <span style="font-family: var(--font-mono); font-size: 12px; color: rgba(255,255,255,0.4);">/</span>
+                    <span id="counter-total" style="font-family: var(--font-mono); font-size: 14px; color: rgba(255,255,255,0.6);">0</span>
+                </div>
+            </div>
+
+            <div class="top-actions" style="display:flex; gap:10px; pointer-events:auto;">
+                <button class="btn btn-outline" id="btn-home">Voltar para Início</button>
             </div>
         </header>
 
-        <!-- Barra de Filtros Horizontal -->
-        <div id="dash-filters-row" class="glass-panel">
-            <span class="filters-label">Filtrar por:</span>
-            <div class="filters-wrap">
-                <div class="filter-select-wrapper">
-                    <select id="filter-method" class="filter-select">
-                        <option value="all">Método de Descoberta</option>
-                    </select>
+        <!-- Canvas Wrap now takes full screen -->
+        <div id="star-map-container" style="position:absolute; inset:0; z-index:1;"></div>
+
+        <!-- SINGLE TABBED SIDE PANEL -->
+        <div id="side-panel" class="visible">
+            <div class="tabs-bar">
+                <button class="tab-btn" id="tab-btn-ficha" data-tab="ficha">Planeta</button>
+                <button class="tab-btn active" id="tab-btn-analise" data-tab="analise">Descobertas <span
+                        class="badge-dot" id="analise-badge"></span></button>
+            </div>
+
+            <div class="tab-content">
+                <!-- FICHA PANE -->
+                <div class="tab-pane" id="pane-ficha">
+                    <div id="ficha-empty" class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="9" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        <div class="t1">Nenhum planeta selecionado</div>
+                        <div class="t2">Clique em um planeta no mapa para<br>ver sua ficha completa aqui.</div>
+                    </div>
+
+                    <div id="ficha-data" style="display:none;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                            <div class="planet-name" id="pc-name" style="margin-bottom: 0;">—</div>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-bottom: 16px; align-items: center;">
+                            <div class="planet-badge" id="pc-badge"
+                                style="border-color:currentColor; color:currentColor; margin-bottom: 0;">—</div>
+                            <div class="planet-badge" id="pc-method-badge"
+                                style="border-color:var(--accent-blue); color:var(--accent-blue); margin-bottom: 0;">—
+                            </div>
+                        </div>
+
+                        <!-- Planet Drawing Container -->
+                        <div id="planet-drawing-container"
+                            style="width: 240px; height: 180px; margin: 16px auto; display: flex; justify-content: center;">
+                        </div>
+
+                        <div class="card-section-label"
+                            style="font-weight: 700; color: var(--text); margin-bottom: 12px;">Ficha do Planeta</div>
+                        <div class="data-row" style="margin-bottom: 6px;"><span class="k">Descoberto em</span><span
+                                class="v" id="pc-year">—</span></div>
+                        <div class="data-row" style="margin-bottom: 6px;"><span class="k">Massa:</span><span class="v"
+                                id="pc-mass">—</span></div>
+                        <div class="data-row" style="margin-bottom: 6px;"><span class="k">Raio:</span><span class="v"
+                                id="pc-radius">—</span></div>
+                        <div class="data-row" style="margin-bottom: 6px;"><span class="k">Distância:</span><span
+                                class="v" id="pc-dist">—</span></div>
+                        <div class="data-row" style="margin-bottom: 6px;"><span class="k">Estrela:</span><span class="v"
+                                id="pc-star">—</span></div>
+
+                        <!-- Linha divisória em degradê -->
+                        <div
+                            style="height: 1px; background: linear-gradient(90deg, #141415, #505054 50%, #141415); margin: 18px 0 22px 0;">
+                        </div>
+
+                        <!-- Gravidade Details -->
+                        <div class="gravity-info-block" style="margin-top: 10px;">
+                            <div class="data-row"
+                                style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: none; padding: 4px 0; margin-bottom: 4px;">
+                                <span class="k"
+                                    style="font-size: 16px; font-weight: 400; color: var(--text-dim);">Gravidade do
+                                    Planeta:</span>
+                                <span class="v" id="pc-gravity-val"
+                                    style="font-size: 20px; font-weight: 700; color: var(--text);">—</span>
+                            </div>
+                            <div class="figma-grav-desc" id="pc-gravity-desc">—</div>
+                            <div class="data-row"
+                                style="display: flex; justify-content: flex-start; gap: 4px; border-bottom: none; padding: 4px 0; margin-bottom: 16px;">
+                                <span class="k" style="color: var(--text-dim);">Gravidade do Planeta Terra:</span>
+                                <span class="v" style="color: var(--text); font-weight: 700;">9,81 m/s²</span>
+                            </div>
+                        </div>
+
+                        <div class="card-section-label"
+                            style="margin-top: 16px; margin-bottom: 6px; font-weight: 700; color: var(--text);">
+                            Simulação de Gravidade</div>
+
+                        <div class="astro-simulator-container"
+                            style="position: relative; width: 100%; height: 90px; margin: 8px 0;">
+                            <!-- SIMULAÇÃO VISUAL ASTRONAUTA -->
+                            <div class="gravity-sim-box" id="gravity-sim-box"
+                                title="Simulação de pulo na gravidade local"
+                                style="position: relative; width: 100%; height: 90px; background: rgba(0,0,0,0.2); border-radius: 4px; overflow: hidden; display: flex; align-items: flex-end; justify-content: center;">
+                                <div class="gravity-sim-floor"
+                                    style="position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, #141415, #505054 50%, #141415);">
+                                </div>
+                                <div class="math-particle"
+                                    style="position: absolute; left: 20%; bottom: 10px; color: rgba(255,255,255,0.15); font-family: var(--font-mono); font-size: 9px; pointer-events: none; animation: floatMath 3s infinite 0.5s;">
+                                    F=ma</div>
+                                <div class="math-particle"
+                                    style="position: absolute; right: 25%; bottom: 15px; color: rgba(255,255,255,0.15); font-family: var(--font-mono); font-size: 9px; pointer-events: none; animation: floatMath 2.5s infinite 1.2s;">
+                                    g↓</div>
+                                <div class="astronaut-shadow" id="sim-shadow"
+                                    style="position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%); width: 22px; height: 3px; background: rgba(0,0,0,0.6); border-radius: 50%; filter: blur(0.5px); transition: transform 0.05s ease, opacity 0.05s ease;">
+                                </div>
+
+                                <svg class="astronaut" id="sim-astronaut" viewBox="0 0 32 40"
+                                    style="position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 32px; height: 40px; pointer-events: none;">
+                                    <!-- Capacete -->
+                                    <rect x="6" y="2" width="20" height="18" rx="8" fill="#E8EAF0" />
+                                    <!-- Visor -->
+                                    <rect x="10" y="6" width="16" height="10" rx="4" fill="#0B0E16" />
+                                    <path d="M 12 8 Q 18 8 24 10" stroke="rgba(255,255,255,0.3)" stroke-width="2"
+                                        fill="none" stroke-linecap="round" />
+                                    <!-- Corpo -->
+                                    <rect x="8" y="18" width="16" height="14" rx="5" fill="#E8EAF0" />
+                                    <!-- Mochila suporte vital -->
+                                    <rect x="3" y="10" width="6" height="16" rx="3" fill="#838B9C" />
+                                    <!-- Braços -->
+                                    <rect x="4" y="20" width="6" height="10" rx="3" fill="#E8EAF0"
+                                        transform="rotate(15 7 20)" />
+                                    <rect x="22" y="20" width="6" height="10" rx="3" fill="#E8EAF0"
+                                        transform="rotate(-15 25 20)" />
+                                    <!-- Pernas -->
+                                    <rect x="10" y="30" width="5" height="8" rx="2" fill="#E8EAF0" />
+                                    <rect x="17" y="30" width="5" height="8" rx="2" fill="#E8EAF0" />
+                                    <!-- Detalhe do peito -->
+                                    <circle cx="16" cy="25" r="3" fill="#5B8DEF" />
+                                </svg>
+                            </div>
+
+                            <div id="astronaut-canvas-empty"
+                                style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.15); border-radius: 4px; align-items: center; justify-content: center; color: var(--text-dim); font-size: 11px; font-family: var(--font-sans); border: 1px dashed #505054; box-sizing: border-box;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                                    style="width: 14px; height: 14px; margin-right: 6px; display: inline-block; vertical-align: middle;">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                <span>Simulação indisponível (dados de gravidade ausentes)</span>
+                            </div>
+                        </div>
+
+
+                    </div>
                 </div>
-                <div class="filter-select-wrapper">
-                    <select id="filter-year" class="filter-select">
-                        <option value="all">Ano de Descoberta</option>
-                        <option value="1980-1999">Antes de 2000</option>
-                        <option value="2000-2009">2000 - 2009</option>
-                        <option value="2010-2019">2010 - 2019</option>
-                        <option value="2020-2026">2020 - Hoje</option>
-                    </select>
+
+                <!-- ANALISE PANE -->
+                <div class="tab-pane active" id="pane-analise">
+                    <!-- Toggle Global e Botão Resetar Filtros -->
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <div class="tl-mode-toggle" id="global-chart-mode-toggle"
+                            style="display: flex; gap: 4px; background: rgba(255,255,255,0.03); padding: 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                            <button class="tl-mode-btn active" id="bar-mode-type" type="button"
+                                style="margin-bottom: 0;">Tipo</button>
+                            <button class="tl-mode-btn" id="bar-mode-method" type="button"
+                                style="margin-bottom: 0;">Método</button>
+                        </div>
+                        <button class="btn" id="btn-reset-charts" onclick="window.clearAllFilters()" disabled
+                            style="background: var(--accent-blue); border: none; color: white; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 6px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s ease; opacity: 0.5;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                style="width: 14px; height: 14px;">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                <path d="M3 3v5h5"></path>
+                            </svg>
+                            Resetar Gráfico
+                        </button>
+                    </div>
+                    <div class="focus-note" id="focus-note" style="display:none;">
+                        <span class="fdot" id="focus-note-dot"></span>
+                        Destacando <b id="focus-note-name">—</b> nos gráficos abaixo
+                    </div>
+
+                    <!-- 1. BAR CHART — Planetas por Tipo ou Método -->
+                    <div class="an-section">
+                        <div class="an-title">
+                            <span>Planetas por Categoria</span>
+                        </div>
+                        <div style="position:relative; width:100%; height:190px;">
+                            <svg id="zoomable-bar-svg" style="width:100%; height:100%; overflow:visible;"></svg>
+                        </div>
+                    </div>
+
+                    <!-- 2. CONNECTED SCATTERPLOT — Evolução temporal por Tipo -->
+                    <div class="an-section">
+                        <div class="an-title">
+                            <span>Descobertas ao Longo do Tempo</span>
+                        </div>
+                        <div style="position:relative; width:100%; height:200px;">
+                            <svg id="connected-scatter-svg" style="width:100%; height:100%; overflow:visible;"></svg>
+                        </div>
+                    </div>
+
+                    <!-- 3. ANIMATED BUBBLE CHART — Explorador Temporal -->
+                    <div class="an-section">
+                        <div class="an-title">
+                            <span>Distribuição de Massa e Raio</span>
+                        </div>
+                        <div style="position:relative; width:100%; height:200px;">
+                            <svg id="bubble-chart-svg" style="width:100%; height:100%; overflow:visible;"></svg>
+                        </div>
+                    </div>
                 </div>
-                <div class="filter-select-wrapper">
-                    <select id="filter-dist" class="filter-select">
-                        <option value="all">Distância</option>
-                        <option value="0-100">Próximos (&lt; 100 a.l.)</option>
-                        <option value="100-1000">Médios (100 - 1000 a.l.)</option>
-                        <option value="1000-5000">Distantes (1000 - 5000 a.l.)</option>
-                        <option value="5000-99999">Profundos (&gt; 5000 a.l.)</option>
-                    </select>
+            </div>
+        </div>
+
+        <!-- Floating Filters Bar outside the panels -->
+        <div class="filters-bar" id="filters-bar"></div>
+
+        <!-- Floating Clear Selection Button -->
+        <button id="btn-clear-selection" class="btn-clear-sel" title="Limpar seleção"
+            style="display:none; position: absolute; left: 420px; top: 90px; z-index: 50; background: rgba(96, 165, 250, 0.15); border: 1px solid var(--accent-blue); color: var(--accent-blue); cursor: pointer; padding: 10px 16px; font-size: 16px; font-family: var(--font-sans); border-radius: 6px; font-weight: 600; align-items: center; gap: 8px; transition: all 0.2s ease; outline: none; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                style="width: 18px; height: 18px;">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+            Limpar Planeta Selecionado
+        </button>
+
+        <!-- RIGHT SIDE FLOATING TYPES PANEL -->
+        <div id="right-types-panel" style="display: none !important;">
+            <div class="right-panel-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; cursor: pointer;">
+                <div class="panel-mode-toggle" style="display: flex; align-items: center;">
+                    <span
+                        style="font-weight: 600; color: var(--text); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Filtros:
+                        Tipo e Método</span>
                 </div>
-                <div class="filter-select-wrapper">
-                    <select id="filter-type" class="filter-select">
-                        <option value="all">Tipo de Planeta</option>
-                    </select>
-                </div>
-                <button class="filter-reset-btn" id="btn-reset-filters" onclick="resetFilters()">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                <button id="btn-collapse-types" type="button"
+                    style="background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 2px; display: flex; align-items: center; justify-content: center; outline: none;">
+                    <svg id="collapse-types-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5" style="width: 12px; height: 12px; transition: transform 0.3s ease;">
+                        <polyline points="18 15 12 9 6 15" />
                     </svg>
-                    Limpar Filtros
                 </button>
             </div>
-        </div>
-
-        <!-- Linha Superior: Mapa Estelar + Ficha Técnica -->
-        <div id="dash-top-row">
-            <!-- Mapa Estelar -->
-            <div class="chart-card glass-panel" id="star-map-card"
-                style="flex: 1; display: flex; flex-direction: column; min-width: 0; padding: 16px;">
-                <div class="chart-header" style="margin-bottom: 8px;">
-                    <h3 class="chart-title">Mapa Estelar de Exoplanetas</h3>
-                </div>
-                <div id="star-map-container" style="flex: 1; min-height: 0; position: relative;"></div>
-            </div>
-
-            <!-- Ficha Técnica (Planet Card sempre visível) -->
-            <aside id="planet-card" class="glass-panel planet-fixed-panel">
-                <!-- Estado Vazio (Placeholder) -->
-                <div id="planet-card-empty"
-                    style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 12px; color: var(--text-muted);">
-                    <h3
-                        style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;">
-                        Ficha do Planeta</h3>
-                    <p style="font-size: 14px; line-height: 1.5; color: var(--text-dim);">Selecione um exoplaneta no
-                        mapa estelar ou nos gráficos abaixo para ver seus dados físicos e simular sua gravidade.</p>
-                </div>
-
-                <!-- Conteúdo da Ficha (escondido por padrão) -->
-                <div id="planet-card-content"
-                    style="display: none; flex-direction: column; gap: 16px;">
-                    <div>
-                        <!-- Identidade com botão de fechar/limpar seleção -->
-                        <div class="card-header"
-                            style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start; position: relative;">
-                            <div>
-                                <h3 class="card-name" id="card-name" style="margin-bottom: 3px; padding-right: 20px;">—
-                                </h3>
-                                <span class="card-type" id="card-type">—</span>
-                            </div>
-                            <button class="card-close" id="btn-card-close" onclick="deselectPlanet()"
-                                style="position: absolute; top: 0; right: 0; background: none; border: none; color: var(--text-dim); font-size: 18px; cursor: pointer; transition: color 0.2s;">×</button>
-                        </div>
-
-                        <!-- Dados Físicos (Lista Vertical 14px) -->
-                        <div class="card-details-list" style="display: flex; flex-direction: column;">
-                            <div class="card-row">
-                                <span class="card-key">Ano de Descoberta</span>
-                                <span class="card-val" id="card-year">—</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="card-key">Método de Detecção</span>
-                                <span class="card-val" id="card-method">—</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="card-key">Massa Planetária</span>
-                                <span class="card-val" id="card-mass">—</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="card-key">Raio Planetário</span>
-                                <span class="card-val" id="card-radius">—</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="card-key">Distância da Terra</span>
-                                <span class="card-val" id="card-dist">—</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="card-key">Estrela Hospedeira</span>
-                                <span class="card-val" id="card-star">—</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="card-key">Temp. da Estrela</span>
-                                <span class="card-val" id="card-stemp">—</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="card-key">Qtd. de Planetas</span>
-                                <span class="card-val" id="card-sysplanets">—</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="card-key">Período Orbital</span>
-                                <span class="card-val" id="card-orbper">—</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <!-- Separador -->
-                        <div class="card-divider" style="margin: 8px 0;"></div>
-
-                        <!-- Simulação de Gravidade -->
-                        <div class="card-gravity">
-                            <div class="gravity-header"
-                                style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
-                                <span class="gravity-label"
-                                    style="font-size: 14px; font-weight: 700; color: var(--text-dim); text-transform: uppercase;">Gravidade
-                                    Superficial</span>
-                                <span class="gravity-value" id="card-grav-value"
-                                    style="font-size: 14px; font-weight: 800; font-family: var(--font-mono);">—</span>
-                            </div>
-                            <div class="gravity-bar-track"
-                                style="width: 100%; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; position: relative; margin-bottom: 8px;">
-                                <div class="gravity-bar-fill" id="card-grav-bar"
-                                    style="height: 100%; border-radius: 2px;"></div>
-                                <div class="gravity-bar-earth" id="card-grav-earth"
-                                    style="position: absolute; top: -2px; width: 2px; height: 8px; background: #fff; opacity: 0.6;">
-                                </div>
-                            </div>
-                            <!-- Animação do Astronauta -->
-                            <div class="astronaut-box" id="astronaut-box"
-                                style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.04); border-radius: var(--radius-md); padding: 6px 8px; display: flex; align-items: center; gap: 8px;">
-                                <canvas id="astronaut-canvas" width="80" height="60"
-                                    style="width: 80px; height: 60px; flex-shrink: 0;"></canvas>
-                                <span class="astronaut-note" id="astronaut-note"
-                                    style="font-size: 14px; color: var(--text-muted); line-height: 1.3;">Gravidade
-                                    terrestre</span>
-                            </div>
-                        </div>
-
-                        <!-- Nota de aproximação -->
-                        <div class="card-calc-note card-calc-hidden" id="card-calc-note"
-                            style="margin-top: 8px; padding: 6px 8px; background: rgba(249,115,22,0.04); border: 1px solid rgba(249,115,22,0.12); border-radius: var(--radius-sm); font-size: 14px; color: var(--accent-orange); line-height: 1.3;">
-                            ⚠ Este planeta contém valores calculados.
-                        </div>
-                    </div>
-                </div>
-            </aside>
-        </div>
-
-        <!-- Linha Inferior: Painel de Relações (Rolagem Vertical) -->
-        <div id="dash-bottom-row">
-            <!-- 1. Tipo de Planeta Bar Chart -->
-            <div class="chart-card glass-panel bottom-chart-card" id="size-chart-box">
-                <div class="chart-header">
-                    <h3 class="chart-title">Distribuição de Tipo de Planeta</h3>
-                </div>
-                <div id="size-chart" class="chart-container-inner"></div>
-            </div>
-
-            <!-- 2. Scatterplot de Massa x Raio -->
-            <div class="chart-card glass-panel bottom-chart-card" id="scatterplot-box">
-                <div class="chart-header" style="display:flex; justify-content:space-between; align-items:center;">
-                    <h3 class="chart-title">Relação Massa x Raio</h3>
-                    <span id="scatter-count"
-                        style="font-size:14px; color:rgba(255,255,255,0.3); font-family:monospace;"></span>
-                </div>
-                <div class="chart-container-inner" id="scatter-container" style="position:relative;">
-                    <canvas id="scatter-canvas" style="position:absolute; inset:0;"></canvas>
-                    <svg id="scatter-svg" style="position:absolute; inset:0; width:100%; height:100%;"></svg>
-                    <div id="scatter-tooltip"
-                        style="position:absolute; background:rgba(8,8,16,0.95); border:1px solid rgba(255,255,255,0.12); border-radius:4px; padding:6px 10px; font-size:14px; pointer-events:none; display:none; z-index:100;">
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3. Evolução dos Métodos (Timeline) -->
-            <div class="chart-card glass-panel bottom-chart-card" id="timeline-chart-box">
-                <div class="chart-header">
-                    <h3 class="chart-title">Evolução dos Métodos (Linha do Tempo)</h3>
-                </div>
-                <div id="timeline-chart" class="chart-container-inner"></div>
-                <div id="timeline-methods-toggles"
-                    style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; justify-content:center;"></div>
-            </div>
-
-            <!-- 4. Rede de Relações (Force Graph) -->
-            <div class="chart-card glass-panel bottom-chart-card" id="network-graph-box">
-                <div class="chart-header">
-                    <h3 class="chart-title">Rede de Relações</h3>
-                </div>
-                <div id="network-graph" class="chart-container-inner"></div>
-            </div>
-
-            <!-- 5. Quantidade por Método -->
-            <div class="chart-card glass-panel bottom-chart-card" id="method-bar-chart-box">
-                <div class="chart-header">
-                    <h3 class="chart-title">Quantidade por Método</h3>
-                </div>
-                <div id="method-bar-chart" class="chart-container-inner"></div>
-            </div>
-
-            <!-- 6. Coordenadas Paralelas -->
-            <div class="chart-card glass-panel bottom-chart-card" id="parallel-coords-box">
-                <div class="chart-header" style="display:flex; justify-content:space-between; align-items:center;">
-                    <h3 class="chart-title">Coordenadas Paralelas</h3>
-                    <span style="font-size:14px; color:rgba(255,255,255,0.3); font-style:italic;">Filtre arrastando nos
-                        eixos</span>
-                </div>
-                <div id="parallel-coords" class="chart-container-inner"></div>
+            <div id="right-types-content">
+                <div id="mbars-container"></div>
             </div>
         </div>
 
-        <!-- Scripts -->
-        <script type="module" src="js/app.js"></script>
+        <!-- Floating Time Player (Temporal Explorer) -->
+        <div id="floating-player-container"
+            style="padding: 12px 20px; display: flex; align-items: center; gap: 12px; justify-content: center; width: fit-content; margin: 0 auto; transition: padding 0.3s ease, gap 0.3s ease;">
+            
+            <button id="toggle-timeline-btn" class="btn" title="Ativar Explorador Temporal"
+                style="font-size: 13px; font-weight: 600; padding: 8px 16px; border: none; color: white; display: flex; align-items: center; gap: 8px; white-space: nowrap; background: var(--accent-blue); border-radius: 6px; cursor: pointer; transition: all 0.2s ease;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span id="toggle-timeline-text">Ativar Explorador Temporal</span>
+            </button>
+
+            <!-- Separator -->
+            <div id="timeline-separator" style="width: 1px; height: 24px; background: rgba(255,255,255,0.15); display: none;"></div>
+
+            <!-- The actual player controls -->
+            <div id="timeline-controls" style="display: none; align-items: center; gap: 16px; flex: 1; min-width: 450px;">
+                
+                <!-- Mode toggle -->
+                <div id="explorer-mode-toggle" class="tl-mode-toggle" style="display: flex; gap: 4px; background: rgba(255,255,255,0.03); padding: 3px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                    <button class="tl-mode-btn" id="explorer-mode-yearly" type="button" style="font-size: 11px; padding: 4px 10px; margin-bottom: 0;">Por Ano</button>
+                    <button class="tl-mode-btn active" id="explorer-mode-cumulative" type="button" style="font-size: 11px; padding: 4px 10px; margin-bottom: 0;">Acumulado</button>
+                    <button class="tl-mode-btn" id="explorer-mode-range" type="button" style="font-size: 11px; padding: 4px 10px; margin-bottom: 0;">Período</button>
+                </div>
+
+                <div style="width: 1px; height: 16px; background: rgba(255,255,255,0.15);"></div>
+
+                <button class="player-btn" id="player-play-btn" type="button" title="Play / Pause"
+                    style="background: none; border: none; color: white; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; outline: none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                        <path d="M6 4 L18 12 L6 20 Z" id="player-icon-shape" />
+                    </svg>
+                </button>
+                
+                <div class="player-slider-wrapper" style="flex: 1; display: flex; align-items: center; position: relative; padding: 12px 0; height: 28px;">
+                    <!-- Tooltips floating above thumbs -->
+                    <div class="player-year-tooltip" id="bubble-year-display-start" style="display: none; position: absolute; top: -14px; left: 0; transform: translateX(-50%); font-family: var(--font-mono); font-size: 11px; font-weight: 800; color: #000; background: #fff; padding: 2px 6px; border-radius: 4px; pointer-events: none; transition: left 0.1s linear; white-space: nowrap; z-index: 10;">
+                        1992
+                    </div>
+                    <div class="player-year-tooltip" id="bubble-year-display" style="position: absolute; top: -14px; left: 0; transform: translateX(-50%); font-family: var(--font-mono); font-size: 13px; font-weight: 800; color: #000; background: #fff; padding: 2px 8px; border-radius: 4px; pointer-events: none; transition: left 0.1s linear; white-space: nowrap; z-index: 10;">
+                        1992
+                    </div>
+                    
+                    <!-- Dual slider structure -->
+                    <div style="position: absolute; width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; top: 12px; pointer-events: none;"></div>
+                    <div id="slider-track-fill" style="position: absolute; height: 4px; background: var(--accent-blue); top: 12px; left: 0; width: 100%; border-radius: 2px; pointer-events: none;"></div>
+                    
+                    <!-- The sliders -->
+                    <input type="range" class="player-slider dual-slider" id="player-slider-start" min="1992" max="2025" value="1992" step="1"
+                        style="position: absolute; width: 100%; margin: 0; top: 12px; appearance: none; background: none; outline: none; pointer-events: none; z-index: 3;">
+                    <input type="range" class="player-slider dual-slider" id="player-slider" min="1992" max="2025" value="1992" step="1"
+                        style="position: absolute; width: 100%; margin: 0; top: 12px; appearance: none; background: none; outline: none; pointer-events: none; z-index: 4;">
+                </div>
+            </div>
+        </div>
+
+        <div class="tooltip" id="tooltip"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="js/app.js"></script>
 
 </body>
 

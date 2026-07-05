@@ -701,7 +701,7 @@ export class TimelineChart {
             const btn = document.createElement('button');
             btn.className = 'scale-btn';
             btn.style.margin = '2px';
-            btn.style.fontFamily = "'Inter', sans-serif";
+            btn.style.fontFamily = "'Public Sans', sans-serif";
             btn.style.fontSize = '14px';
             btn.style.padding = '4px 8px';
             btn.style.borderRadius = '4px';
