@@ -229,7 +229,8 @@
             </div>
 
             <button class="enter-btn" id="btn-enter-dash" onclick="enterDash()"
-                style="position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 100; margin: 0; background: var(--accent-blue); color: #fff; box-shadow: 0 4px 15px rgba(96, 165, 250, 0.4); border-color: transparent; opacity: 0; pointer-events: none; transition: opacity 0.6s;">Explorar mais sobre Exoplanetas →</button>
+                style="position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 100; margin: 0; background: var(--accent-blue); color: #fff; box-shadow: 0 4px 15px rgba(96, 165, 250, 0.4); border-color: transparent; opacity: 0; pointer-events: none; transition: opacity 0.6s;">Explorar
+                mais sobre Exoplanetas →</button>
 
             <div class="hint" id="hint">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -279,12 +280,17 @@
             </div>
 
             <!-- Planet Counter -->
-            <div id="planet-counter" style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: auto;">
-                <div style="font-family: var(--font-sans); font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px;">Planetas na Amostra</div>
+            <div id="planet-counter"
+                style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: auto;">
+                <div
+                    style="font-family: var(--font-sans); font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px;">
+                    Planetas na Amostra</div>
                 <div style="display: flex; align-items: baseline; gap: 4px;">
-                    <span id="counter-sample" style="font-family: var(--font-mono); font-size: 24px; font-weight: 700; color: var(--accent-blue); text-shadow: 0 0 8px rgba(96, 165, 250, 0.3);">0</span>
+                    <span id="counter-sample"
+                        style="font-family: var(--font-mono); font-size: 24px; font-weight: 700; color: var(--accent-blue); text-shadow: 0 0 8px rgba(96, 165, 250, 0.3);">0</span>
                     <span style="font-family: var(--font-mono); font-size: 12px; color: rgba(255,255,255,0.4);">/</span>
-                    <span id="counter-total" style="font-family: var(--font-mono); font-size: 14px; color: rgba(255,255,255,0.6);">0</span>
+                    <span id="counter-total"
+                        style="font-family: var(--font-mono); font-size: 14px; color: rgba(255,255,255,0.6);">0</span>
                 </div>
             </div>
 
@@ -532,8 +538,10 @@
         </div>
 
         <!-- FLOATING PARALLEL COORDS PANEL (BOTTOM RIGHT) -->
-        <button id="btn-open-coords" title="Abrir Coordenadas Paralelas" style="display: none; position: absolute; bottom: 24px; right: 24px; z-index: 50; background: var(--accent-blue); border: none; color: white; border-radius: 8px; width: 44px; height: 44px; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: transform 0.2s ease;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+        <button id="btn-open-coords" title="Abrir Características Físicas dos Exoplanetas"
+            style="display: none; position: absolute; bottom: 24px; right: 24px; z-index: 50; background: var(--accent-blue); border: none; color: white; border-radius: 8px; width: 44px; height: 44px; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: transform 0.2s ease;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                style="width: 20px; height: 20px;">
                 <path d="M4 6h16 M4 12h16 M4 18h16"></path>
                 <circle cx="10" cy="6" r="2" fill="currentColor"></circle>
                 <circle cx="16" cy="12" r="2" fill="currentColor"></circle>
@@ -541,11 +549,16 @@
             </svg>
         </button>
 
-        <div id="floating-coords-panel" style="position: absolute; bottom: 24px; right: 24px; z-index: 50; width: 640px; background: rgba(11, 14, 22, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); display: flex; flex-direction: column;">
+        <div id="floating-coords-panel"
+            style="position: absolute; bottom: 24px; right: 24px; z-index: 50; width: 640px; background: rgba(11, 14, 22, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); display: flex; flex-direction: column;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <span style="font-weight: 600; color: var(--text); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Coordenadas Paralelas</span>
-                <button id="btn-close-coords" type="button" style="background: none; border: none; color: var(--text-dim); cursor: pointer; outline: none; padding: 4px;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <span
+                    style="font-weight: 600; color: var(--text); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Formação
+                    Física dos Planetas</span>
+                <button id="btn-close-coords" type="button"
+                    style="background: none; border: none; color: var(--text-dim); cursor: pointer; outline: none; padding: 4px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        style="width: 16px; height: 16px;">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
@@ -557,55 +570,72 @@
         <!-- Floating Time Player (Temporal Explorer) -->
         <div id="floating-player-container"
             style="display: flex; align-items: center; gap: 12px; justify-content: center; width: fit-content; margin: 0 auto; transition: padding 0.3s ease, gap 0.3s ease;">
-            
+
             <button id="toggle-timeline-btn" class="btn" title="Ativar Explorador Temporal"
                 style="font-size: 13px; font-weight: 600; padding: 8px 16px; border: none; color: white; display: flex; align-items: center; gap: 8px; white-space: nowrap; background: var(--accent-blue); border-radius: 6px; cursor: pointer; transition: all 0.2s ease;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    style="width: 16px; height: 16px;">
                     <circle cx="12" cy="12" r="10" />
                     <polyline points="12 6 12 12 16 14" />
                 </svg>
                 <span id="toggle-timeline-text">Ativar Explorador Temporal</span>
             </button>
- 
+
             <!-- Separator -->
-            <div id="timeline-separator" style="width: 1px; height: 24px; background: rgba(255,255,255,0.15); display: none;"></div>
- 
+            <div id="timeline-separator"
+                style="width: 1px; height: 24px; background: rgba(255,255,255,0.15); display: none;"></div>
+
             <!-- The actual player controls -->
-            <div id="timeline-controls" style="display: none; align-items: center; gap: 16px; flex: 1; min-width: 450px;">
-                
+            <div id="timeline-controls"
+                style="display: none; align-items: center; gap: 16px; flex: 1; min-width: 450px;">
+
                 <!-- Mode toggle -->
-                <div id="explorer-mode-toggle" class="tl-mode-toggle" style="display: flex; gap: 4px; background: rgba(255,255,255,0.03); padding: 3px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
-                    <button class="tl-mode-btn" id="explorer-mode-yearly" type="button" style="font-size: 11px; padding: 4px 10px; margin-bottom: 0;">Por Ano</button>
-                    <button class="tl-mode-btn active" id="explorer-mode-cumulative" type="button" style="font-size: 11px; padding: 4px 10px; margin-bottom: 0;">Acumulado</button>
-                    <button class="tl-mode-btn" id="explorer-mode-range" type="button" style="font-size: 11px; padding: 4px 10px; margin-bottom: 0;">Período</button>
+                <div id="explorer-mode-toggle" class="tl-mode-toggle"
+                    style="display: flex; gap: 4px; background: rgba(255,255,255,0.03); padding: 3px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                    <button class="tl-mode-btn" id="explorer-mode-yearly" type="button"
+                        style="font-size: 11px; padding: 4px 10px; margin-bottom: 0;">Por Ano</button>
+                    <button class="tl-mode-btn active" id="explorer-mode-cumulative" type="button"
+                        style="font-size: 11px; padding: 4px 10px; margin-bottom: 0;">Acumulado</button>
+                    <button class="tl-mode-btn" id="explorer-mode-range" type="button"
+                        style="font-size: 11px; padding: 4px 10px; margin-bottom: 0;">Período</button>
                 </div>
- 
+
                 <div style="width: 1px; height: 16px; background: rgba(255,255,255,0.15);"></div>
- 
+
                 <button class="player-btn" id="player-play-btn" type="button" title="Play / Pause"
                     style="background: none; border: none; color: white; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; outline: none;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                        stroke-linejoin="round" width="20" height="20">
                         <path d="M6 4 L18 12 L6 20 Z" id="player-icon-shape" />
                     </svg>
                 </button>
-                
-                <div class="player-slider-wrapper" style="flex: 1; display: flex; align-items: center; position: relative; padding: 12px 12px; height: 28px;">
+
+                <div class="player-slider-wrapper"
+                    style="flex: 1; display: flex; align-items: center; position: relative; padding: 12px 12px; height: 28px;">
                     <!-- Tooltips floating above thumbs -->
-                    <div class="player-year-tooltip" id="bubble-year-display-start" style="display: none; position: absolute; top: -14px; left: 0; transform: translateX(-50%); font-family: var(--font-mono); font-size: 11px; font-weight: 800; color: #000; background: #fff; padding: 2px 6px; border-radius: 4px; pointer-events: none; transition: left 0.1s linear; white-space: nowrap; z-index: 10;">
+                    <div class="player-year-tooltip" id="bubble-year-display-start"
+                        style="display: none; position: absolute; top: -14px; left: 0; transform: translateX(-50%); font-family: var(--font-mono); font-size: 11px; font-weight: 800; color: #000; background: #fff; padding: 2px 6px; border-radius: 4px; pointer-events: none; transition: left 0.1s linear; white-space: nowrap; z-index: 10;">
                         1992
                     </div>
-                    <div class="player-year-tooltip" id="bubble-year-display" style="position: absolute; top: -14px; left: 0; transform: translateX(-50%); font-family: var(--font-mono); font-size: 13px; font-weight: 800; color: #000; background: #fff; padding: 2px 8px; border-radius: 4px; pointer-events: none; transition: left 0.1s linear; white-space: nowrap; z-index: 10;">
+                    <div class="player-year-tooltip" id="bubble-year-display"
+                        style="position: absolute; top: -14px; left: 0; transform: translateX(-50%); font-family: var(--font-mono); font-size: 13px; font-weight: 800; color: #000; background: #fff; padding: 2px 8px; border-radius: 4px; pointer-events: none; transition: left 0.1s linear; white-space: nowrap; z-index: 10;">
                         1992
                     </div>
-                    
+
                     <!-- Dual slider structure -->
-                    <div style="position: absolute; width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; top: 12px; pointer-events: none;"></div>
-                    <div id="slider-track-fill" style="position: absolute; height: 4px; background: var(--accent-blue); top: 12px; left: 0; width: 100%; border-radius: 2px; pointer-events: none;"></div>
-                    
+                    <div
+                        style="position: absolute; width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; top: 12px; pointer-events: none;">
+                    </div>
+                    <div id="slider-track-fill"
+                        style="position: absolute; height: 4px; background: var(--accent-blue); top: 12px; left: 0; width: 100%; border-radius: 2px; pointer-events: none;">
+                    </div>
+
                     <!-- The sliders -->
-                    <input type="range" class="player-slider dual-slider" id="player-slider-start" min="1992" max="2025" value="1992" step="1"
+                    <input type="range" class="player-slider dual-slider" id="player-slider-start" min="1992" max="2025"
+                        value="1992" step="1"
                         style="position: absolute; width: 100%; margin: 0; top: 12px; appearance: none; background: none; outline: none; pointer-events: none; z-index: 3;">
-                    <input type="range" class="player-slider dual-slider" id="player-slider" min="1992" max="2025" value="1992" step="1"
+                    <input type="range" class="player-slider dual-slider" id="player-slider" min="1992" max="2025"
+                        value="1992" step="1"
                         style="position: absolute; width: 100%; margin: 0; top: 12px; appearance: none; background: none; outline: none; pointer-events: none; z-index: 4;">
                 </div>
             </div>

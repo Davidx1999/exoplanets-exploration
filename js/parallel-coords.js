@@ -1,5 +1,5 @@
 /**
- * js/parallel-coords.js — Coordenadas Paralelas D3.js
+ * js/parallel-coords.js — Características Físicas dos Exoplanetas D3.js
  *
  * Visualização multivariável para explorar simultaneamente
  * Massa, Raio, Órbita, Temperatura da Estrela e Distância
@@ -18,11 +18,11 @@ let highlightedPlanet = null;
 let hovered = null;
 
 const DIMS = [
-    { key: 'mass',     label: 'Massa (M⊕)',            scaleType: 'log' },
-    { key: 'radius',   label: 'Raio (R⊕)',             scaleType: 'log' },
-    { key: 'density',  label: 'Densidade (g/cm³)',     scaleType: 'log' },
-    { key: 'eqTempC',  label: 'Temp. Equilíbrio (°C)', scaleType: 'linear' },
-    { key: 'orbper',   label: 'Período (dias)',        scaleType: 'log' },
+    { key: 'mass', label: 'Massa (M⊕)', scaleType: 'log' },
+    { key: 'radius', label: 'Raio (R⊕)', scaleType: 'log' },
+    { key: 'density', label: 'Densidade (g/cm³)', scaleType: 'log' },
+    { key: 'eqTempC', label: 'Temp. Equilíbrio (°C)', scaleType: 'linear' },
+    { key: 'orbper', label: 'Período (dias)', scaleType: 'log' },
 ];
 
 const MARGIN = { top: 36, right: 10, bottom: 8, left: 10 };
@@ -169,20 +169,20 @@ function renderLines(data, maxYear, startYear) {
             return 0.3; // Default opacity when nothing is hovered/selected
         })
         .attr('pointer-events', 'stroke')
-        .on('mouseenter', function(event, d) {
+        .on('mouseenter', function (event, d) {
             hovered = d;
             updateHighlightVisuals();
             showTooltip(event, d);
         })
-        .on('mousemove', function(event, d) {
+        .on('mousemove', function (event, d) {
             showTooltip(event, d);
         })
-        .on('mouseleave', function() {
+        .on('mouseleave', function () {
             hovered = null;
             updateHighlightVisuals();
             hideTooltip();
         })
-        .on('click', function(event, d) {
+        .on('click', function (event, d) {
             event.stopPropagation();
             if (window.selectPlanet) window.selectPlanet(d);
         })
@@ -247,7 +247,7 @@ function showTooltip(event, d) {
     const container = svg.node().parentNode;
     const rect = container.getBoundingClientRect();
     const tRect = tooltip.getBoundingClientRect();
-    
+
     let x = event.clientX - rect.left + 12;
     let y = event.clientY - rect.top - 10;
 
@@ -269,7 +269,7 @@ function hideTooltip() {
 // ============================================
 
 /**
- * Constrói ou reconstrói as Coordenadas Paralelas.
+ * Constrói ou reconstrói as Características Físicas dos Exoplanetas.
  * @param {Array} data - Array de planetas já filtrados por applyFilters()
  * @param {Object|null} selectedPlanet - Planeta selecionado globalmente
  * @param {Number|null} maxYear - Ano máximo do explorador temporal
