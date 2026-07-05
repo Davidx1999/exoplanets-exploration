@@ -1598,6 +1598,29 @@ header *{ pointer-events:auto; }
   max-width: 640px; /* Matches parallel coordinates panel width */
 }
 
+/* Evita que o player temporal sobreponha as coordenadas paralelas e o painel esquerdo */
+@media (max-width: 1600px) {
+  #floating-player-container {
+    left: 408px; /* 384px(painel esquerdo) + 24px(gap) */
+    right: 92px; /* 44px(botão) + 24px(margem direita) + 24px(gap) */
+    transform: none;
+    width: auto;
+    max-width: none;
+  }
+  
+  body.coords-open #floating-player-container {
+    right: 688px; /* 640px(painel direito) + 24px(margem) + 24px(gap) */
+  }
+}
+
+/* Em telas onde os 3 (esquerda, centro, direita) não cabem lado a lado */
+@media (max-width: 1550px) {
+  body.coords-open #floating-player-container {
+    right: 24px;
+    bottom: 390px; /* Move o player para cima do painel direito (aprox 340px altura + 24px gap + 24px margem) */
+  }
+}
+
 .player-slider-wrapper {
   flex: 1;
   display: flex;

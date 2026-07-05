@@ -831,10 +831,12 @@ function initDashboard() {
         btnOpenCoords.onclick = () => {
             panelCoords.style.display = 'flex';
             btnOpenCoords.style.display = 'none';
+            document.body.classList.add('coords-open');
         };
         btnCloseCoords.onclick = () => {
             panelCoords.style.display = 'none';
             btnOpenCoords.style.display = 'flex';
+            document.body.classList.remove('coords-open');
         };
     }
 
