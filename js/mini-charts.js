@@ -827,7 +827,7 @@ export function updateBubbleChart(year, startYear = null) {
                             toggleBtn.title = "Desativar Explorador";
                             toggleBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
                             
-                            if (container) container.style.padding = '12px 24px';
+                            if (container) container.classList.add('active');
                             if (timelineControls) timelineControls.style.display = 'flex';
                             if (timelineSeparator) timelineSeparator.style.display = 'block';
                             
@@ -841,7 +841,7 @@ export function updateBubbleChart(year, startYear = null) {
                             toggleBtn.title = "Ativar Explorador Temporal";
                             toggleBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> <span id="toggle-timeline-text" style="white-space: nowrap;">Ativar Explorador Temporal</span>`;
                             
-                            if (container) container.style.padding = '12px 20px';
+                            if (container) container.classList.remove('active');
                             if (timelineControls) timelineControls.style.display = 'none';
                             if (timelineSeparator) timelineSeparator.style.display = 'none';
                             

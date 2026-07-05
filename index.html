@@ -556,7 +556,7 @@
 
         <!-- Floating Time Player (Temporal Explorer) -->
         <div id="floating-player-container"
-            style="padding: 12px 24px; display: flex; align-items: center; gap: 12px; justify-content: center; width: fit-content; margin: 0 auto; transition: padding 0.3s ease, gap 0.3s ease;">
+            style="display: flex; align-items: center; gap: 12px; justify-content: center; width: fit-content; margin: 0 auto; transition: padding 0.3s ease, gap 0.3s ease;">
             
             <button id="toggle-timeline-btn" class="btn" title="Ativar Explorador Temporal"
                 style="font-size: 13px; font-weight: 600; padding: 8px 16px; border: none; color: white; display: flex; align-items: center; gap: 8px; white-space: nowrap; background: var(--accent-blue); border-radius: 6px; cursor: pointer; transition: all 0.2s ease;">
@@ -566,10 +566,10 @@
                 </svg>
                 <span id="toggle-timeline-text">Ativar Explorador Temporal</span>
             </button>
-
+ 
             <!-- Separator -->
             <div id="timeline-separator" style="width: 1px; height: 24px; background: rgba(255,255,255,0.15); display: none;"></div>
-
+ 
             <!-- The actual player controls -->
             <div id="timeline-controls" style="display: none; align-items: center; gap: 16px; flex: 1; min-width: 450px;">
                 
@@ -579,9 +579,9 @@
                     <button class="tl-mode-btn active" id="explorer-mode-cumulative" type="button" style="font-size: 11px; padding: 4px 10px; margin-bottom: 0;">Acumulado</button>
                     <button class="tl-mode-btn" id="explorer-mode-range" type="button" style="font-size: 11px; padding: 4px 10px; margin-bottom: 0;">Período</button>
                 </div>
-
+ 
                 <div style="width: 1px; height: 16px; background: rgba(255,255,255,0.15);"></div>
-
+ 
                 <button class="player-btn" id="player-play-btn" type="button" title="Play / Pause"
                     style="background: none; border: none; color: white; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; outline: none;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
@@ -589,7 +589,7 @@
                     </svg>
                 </button>
                 
-                <div class="player-slider-wrapper" style="flex: 1; display: flex; align-items: center; position: relative; padding: 12px 0; height: 28px;">
+                <div class="player-slider-wrapper" style="flex: 1; display: flex; align-items: center; position: relative; padding: 12px 12px; height: 28px;">
                     <!-- Tooltips floating above thumbs -->
                     <div class="player-year-tooltip" id="bubble-year-display-start" style="display: none; position: absolute; top: -14px; left: 0; transform: translateX(-50%); font-family: var(--font-mono); font-size: 11px; font-weight: 800; color: #000; background: #fff; padding: 2px 6px; border-radius: 4px; pointer-events: none; transition: left 0.1s linear; white-space: nowrap; z-index: 10;">
                         1992

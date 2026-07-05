@@ -1593,6 +1593,11 @@ header *{ pointer-events:auto; }
   transition: all 0.3s ease;
 }
 
+#floating-player-container.active {
+  padding: 12px 24px;
+  max-width: 640px; /* Matches parallel coordinates panel width */
+}
+
 .player-slider-wrapper {
   flex: 1;
   display: flex;
