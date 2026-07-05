@@ -14,6 +14,7 @@ import { hasCalculatedValues, getMethodColor, getTypeColor, formatNumber } from 
 import { PlanetCard } from './planet-card.js';
 import { StarMap } from './star-map.js';
 import { buildZoomableBarChart, buildConnectedScatter, buildBubbleChart, updateBubbleChart, renderChips, updateBars, renderFilters, setupTimelineModeToggle, setupBarChartModeToggle, setupPlayerControls, getBarChartMode, cleanupPlayer } from './mini-charts.js';
+import { buildParallelCoordinates, highlightParallelCoords } from './parallel-coords.js';
 
 // ============================================
 // ESTADO GLOBAL + PUB/SUB
@@ -655,6 +656,7 @@ window.selectPlanet = function (planet) {
     }
     
     if (starMap) starMap.highlight(planet, true);
+    highlightParallelCoords(planet);
     
     applyFilters();
     dispatch();
@@ -672,6 +674,7 @@ window.deselectPlanet = function () {
     window.openPanel('analise');
     
     if (starMap) starMap.highlight(null, true);
+    highlightParallelCoords(null);
     
     applyFilters();
     dispatch();
@@ -790,6 +793,7 @@ function initDashboard() {
                 }
             }
             buildConnectedScatter(syncData, state.selectedPlanet, state.timelineYear, false, startYear);
+            buildParallelCoordinates(syncData, state.selectedPlanet, state.timelineYear, state.timelineStartYear);
             updatePlanetCounter();
         });
 
@@ -817,6 +821,22 @@ function initDashboard() {
     
     const btnHome = document.getElementById('btn-home');
     if(btnHome) btnHome.onclick = window.exitDash;
+
+    // Floating Coords Panel Toggle
+    const btnOpenCoords = document.getElementById('btn-open-coords');
+    const btnCloseCoords = document.getElementById('btn-close-coords');
+    const panelCoords = document.getElementById('floating-coords-panel');
+
+    if (btnOpenCoords && btnCloseCoords && panelCoords) {
+        btnOpenCoords.onclick = () => {
+            panelCoords.style.display = 'flex';
+            btnOpenCoords.style.display = 'none';
+        };
+        btnCloseCoords.onclick = () => {
+            panelCoords.style.display = 'none';
+            btnOpenCoords.style.display = 'flex';
+        };
+    }
 
     // Clear selection button inside Ficha details
     const btnClearSel = document.getElementById('btn-clear-selection');
@@ -970,6 +990,9 @@ function applyFilters(forceAnimate = false) {
     // Bubble Chart (keeps its own player state, just rebuild structure)
     buildBubbleChart(syncData);
     
+    // Parallel Coordinates
+    buildParallelCoordinates(syncData, state.selectedPlanet, state.timelineYear, state.timelineStartYear);
+
     // Update global reset button state
     updateResetButton();
     updatePlanetCounter();
