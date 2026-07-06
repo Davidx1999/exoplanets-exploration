@@ -638,7 +638,7 @@ window.hoverPlanet = function (idx) { hoveredPlanetIdx = idx; updateScalePop(idx
 window.unhoverPlanet = function () { hoveredPlanetIdx = -1; if (selectedPlanetIdx !== -1) updateScalePop(selectedPlanetIdx); else resetScalePop(); };
 window.selectScalePlanet = function (idx) { if (selectedPlanetIdx === idx) { selectedPlanetIdx = -1; resetScalePop(); } else { selectedPlanetIdx = idx; updateScalePop(idx); } };
 
-window.selectPlanet = function (planet) {
+window.selectPlanet = function (planet, centerOnMap = false) {
     state.selectedPlanet = planet;
     const btnClearSel = document.getElementById('btn-clear-selection');
     const tabBtnFicha = document.getElementById('tab-btn-ficha');
@@ -655,7 +655,12 @@ window.selectPlanet = function (planet) {
         window.openPanel('analise');
     }
     
-    if (starMap) starMap.highlight(planet, true);
+    if (starMap) {
+        starMap.highlight(planet, true);
+        if (centerOnMap && planet) {
+            starMap.centerOnPlanet(planet);
+        }
+    }
     highlightParallelCoords(planet);
     
     applyFilters();

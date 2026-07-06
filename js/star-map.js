@@ -639,6 +639,21 @@ export class StarMap {
         }
     }
 
+    centerOnPlanet(planet) {
+        if (!planet || !this.points) return;
+        const pt = this.points.find(p => p.data.name === planet.name);
+        if (pt) {
+            const scale = 6;
+            const tx = this.width / 2 - pt.x * scale;
+            const ty = this.height / 2 - pt.y * scale;
+
+            d3.select(this.canvas).transition()
+                .duration(800)
+                .ease(d3.easeCubicOut)
+                .call(this.zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+        }
+    }
+
     resetZoom() {
         d3.select(this.canvas).transition()
             .duration(800)

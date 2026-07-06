@@ -184,7 +184,7 @@ function renderLines(data, maxYear, startYear) {
         })
         .on('click', function (event, d) {
             event.stopPropagation();
-            if (window.selectPlanet) window.selectPlanet(d);
+            if (window.selectPlanet) window.selectPlanet(d, true);
         })
         .sort((a, b) => {
             // Draw highlighted/hovered on top

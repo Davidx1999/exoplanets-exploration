@@ -146,7 +146,7 @@ export function buildZoomableBarChart(data, activeValue = null, onBarClick = nul
             .attr('class', 'x-axis axis')
             .attr('transform', `translate(0,${innerH})`)
             .call(xAxis);
-        
+
         xAxisG.select('.domain').attr('stroke', 'rgba(255,255,255,0.1)');
         xAxisG.selectAll('.tick line').attr('stroke', 'rgba(255,255,255,0.15)');
         xAxisG.selectAll('.tick text')
@@ -157,9 +157,9 @@ export function buildZoomableBarChart(data, activeValue = null, onBarClick = nul
     } else {
         // Update grid and axis positions smoothly if w/h changed
         const tGrid = svgEl.transition().duration(150);
-        
+
         g.attr('transform', `translate(${margin.left},${margin.top})`);
-        
+
         g.select('.grid').transition(tGrid)
             .call(d3.axisBottom(scX).ticks(5).tickSize(innerH).tickFormat(''))
             .call(gAxis => {
@@ -173,7 +173,7 @@ export function buildZoomableBarChart(data, activeValue = null, onBarClick = nul
         const xAxisG = g.select('.x-axis').transition(tGrid)
             .attr('transform', `translate(0,${innerH})`)
             .call(xAxis);
-            
+
         xAxisG.select('.domain').attr('stroke', 'rgba(255,255,255,0.1)');
         xAxisG.selectAll('.tick line').attr('stroke', 'rgba(255,255,255,0.15)');
         xAxisG.selectAll('.tick text')
@@ -622,7 +622,7 @@ export function updateBubbleChart(year, startYear = null) {
         })
         .on('mouseenter', (e, d) => {
             d3.select(e.currentTarget).attr('r', 9).attr('opacity', 1).attr('stroke', '#fff');
-            showTooltip(e, d.name, `${d.year} — ${d[fieldKey]}<br>Massa: ${fmtNumber(d.mass)} M⊕<br>Raio: ${fmtNumber(d.radius)} R⊕`);
+            showTooltip(e, d.name, `${d.year} — ${d[fieldKey]}<br>Massa (Terra): ${fmtNumber(d.mass)} M⊕<br>Raio: ${fmtNumber(d.radius)} R⊕`);
             if (window.starMapHighlightByFilter) window.starMapHighlightByFilter(p => p.id === d.id);
         })
         .on('mouseleave', (e, d) => {
@@ -657,249 +657,249 @@ export function updateBubbleChart(year, startYear = null) {
 
     // Update year display
     const yearDisplay = document.getElementById('bubble-year-display');
-                if (yearDisplay) yearDisplay.textContent = year;
+    if (yearDisplay) yearDisplay.textContent = year;
+}
+
+// ============================================
+// PLAYER CONTROLS
+// ============================================
+
+export function setupPlayerControls(data, onYearChange) {
+    const playBtn = document.getElementById('player-play-btn');
+    const sliderEnd = document.getElementById('player-slider');
+    const sliderStart = document.getElementById('player-slider-start');
+    const trackFill = document.getElementById('slider-track-fill');
+
+    const iconShape = document.getElementById('player-icon-shape');
+    const toggleBtn = document.getElementById('toggle-timeline-btn');
+    const timelineControls = document.getElementById('timeline-controls');
+    const timelineSeparator = document.getElementById('timeline-separator');
+
+    const yearDisplayEnd = document.getElementById('bubble-year-display');
+    const yearDisplayStart = document.getElementById('bubble-year-display-start');
+
+    // Explorer mode elements
+    const btnModeYearly = document.getElementById('explorer-mode-yearly');
+    const btnModeCumulative = document.getElementById('explorer-mode-cumulative');
+    const btnModeRange = document.getElementById('explorer-mode-range');
+
+    if (!playBtn || !sliderEnd || !sliderStart) return;
+
+    // Set range from data
+    const years = data.filter(d => d.year && d.year > 1980).map(d => d.year);
+    const minYear = d3.min(years) || 1992;
+    const maxYear = d3.max(years) || 2025;
+
+    sliderEnd.min = minYear;
+    sliderEnd.max = maxYear;
+    sliderEnd.value = minYear;
+
+    sliderStart.min = minYear;
+    sliderStart.max = maxYear;
+    sliderStart.value = minYear;
+
+    // Default to inactive state
+    playerYear = 2050;
+    let isTimelineActive = false;
+
+    const updateSliderUI = () => {
+        const min = parseInt(sliderEnd.min);
+        const max = parseInt(sliderEnd.max);
+        const valEnd = parseInt(sliderEnd.value);
+        const valStart = parseInt(sliderStart.value);
+
+        const percentEnd = (valEnd - min) / (max - min);
+        const offsetEnd = `calc(${percentEnd * 100}% - ${percentEnd * 14}px + 7px)`;
+        if (yearDisplayEnd) {
+            yearDisplayEnd.style.left = offsetEnd;
+            yearDisplayEnd.textContent = valEnd;
+        }
+
+        const percentStart = (valStart - min) / (max - min);
+        const offsetStart = `calc(${percentStart * 100}% - ${percentStart * 14}px + 7px)`;
+        if (yearDisplayStart) {
+            yearDisplayStart.style.left = offsetStart;
+            yearDisplayStart.textContent = valStart;
+        }
+
+        if (trackFill) {
+            if (explorerMode === 'range') {
+                trackFill.style.left = `calc(${percentStart * 100}%)`;
+                trackFill.style.width = `calc(${(percentEnd - percentStart) * 100}%)`;
+            } else if (explorerMode === 'yearly') {
+                trackFill.style.left = `calc(${percentEnd * 100}%)`;
+                trackFill.style.width = '0%';
+            } else { // cumulative
+                trackFill.style.left = '0%';
+                trackFill.style.width = `calc(${percentEnd * 100}%)`;
             }
+        }
+    };
 
-            // ============================================
-            // PLAYER CONTROLS
-            // ============================================
+    const getEffectiveRange = () => {
+        if (!isTimelineActive) return { start: null, end: 2050 };
+        const valEnd = parseInt(sliderEnd.value);
+        const valStart = parseInt(sliderStart.value);
 
-            export function setupPlayerControls(data, onYearChange) {
-                const playBtn = document.getElementById('player-play-btn');
-                const sliderEnd = document.getElementById('player-slider');
-                const sliderStart = document.getElementById('player-slider-start');
-                const trackFill = document.getElementById('slider-track-fill');
-                
-                const iconShape = document.getElementById('player-icon-shape');
-                const toggleBtn = document.getElementById('toggle-timeline-btn');
-                const timelineControls = document.getElementById('timeline-controls');
-                const timelineSeparator = document.getElementById('timeline-separator');
-                
-                const yearDisplayEnd = document.getElementById('bubble-year-display');
-                const yearDisplayStart = document.getElementById('bubble-year-display-start');
+        if (explorerMode === 'yearly') {
+            return { start: valEnd, end: valEnd };
+        } else if (explorerMode === 'range') {
+            return { start: valStart, end: valEnd };
+        } else {
+            return { start: minYear, end: valEnd };
+        }
+    };
 
-                // Explorer mode elements
-                const btnModeYearly = document.getElementById('explorer-mode-yearly');
-                const btnModeCumulative = document.getElementById('explorer-mode-cumulative');
-                const btnModeRange = document.getElementById('explorer-mode-range');
+    const fireChange = () => {
+        const range = getEffectiveRange();
+        onYearChange(range.end, range.start);
+    };
 
-                if (!playBtn || !sliderEnd || !sliderStart) return;
+    const updateModeUI = () => {
+        if (btnModeYearly) btnModeYearly.classList.toggle('active', explorerMode === 'yearly');
+        if (btnModeCumulative) btnModeCumulative.classList.toggle('active', explorerMode === 'cumulative');
+        if (btnModeRange) btnModeRange.classList.toggle('active', explorerMode === 'range');
 
-                // Set range from data
-                const years = data.filter(d => d.year && d.year > 1980).map(d => d.year);
-                const minYear = d3.min(years) || 1992;
-                const maxYear = d3.max(years) || 2025;
+        if (explorerMode === 'range') {
+            sliderStart.style.pointerEvents = 'auto';
+            sliderStart.style.opacity = '1';
+            if (yearDisplayStart) yearDisplayStart.style.display = 'block';
+        } else {
+            sliderStart.style.pointerEvents = 'none';
+            sliderStart.style.opacity = '0';
+            if (yearDisplayStart) yearDisplayStart.style.display = 'none';
+        }
+        updateSliderUI();
+    };
 
-                sliderEnd.min = minYear;
-                sliderEnd.max = maxYear;
-                sliderEnd.value = minYear;
-                
-                sliderStart.min = minYear;
-                sliderStart.max = maxYear;
-                sliderStart.value = minYear;
+    if (btnModeYearly) {
+        btnModeYearly.onclick = () => {
+            explorerMode = 'yearly';
+            updateModeUI();
+            if (isTimelineActive) fireChange();
+        };
+    }
+    if (btnModeCumulative) {
+        btnModeCumulative.onclick = () => {
+            explorerMode = 'cumulative';
+            updateModeUI();
+            if (isTimelineActive) fireChange();
+        };
+    }
+    if (btnModeRange) {
+        btnModeRange.onclick = () => {
+            explorerMode = 'range';
+            updateModeUI();
+            if (isTimelineActive) fireChange();
+        };
+    }
 
-                // Default to inactive state
-                playerYear = 2050; 
-                let isTimelineActive = false;
+    sliderEnd.oninput = () => {
+        if (explorerMode === 'range' && parseInt(sliderEnd.value) < parseInt(sliderStart.value)) {
+            sliderStart.value = sliderEnd.value;
+        }
+        updateSliderUI();
+        if (isTimelineActive) {
+            playerYear = parseInt(sliderEnd.value);
+            fireChange();
+        }
+    };
 
-                const updateSliderUI = () => {
-                    const min = parseInt(sliderEnd.min);
-                    const max = parseInt(sliderEnd.max);
-                    const valEnd = parseInt(sliderEnd.value);
-                    const valStart = parseInt(sliderStart.value);
+    sliderStart.oninput = () => {
+        if (explorerMode === 'range' && parseInt(sliderStart.value) > parseInt(sliderEnd.value)) {
+            sliderEnd.value = sliderStart.value;
+        }
+        updateSliderUI();
+        if (isTimelineActive) {
+            playerYear = parseInt(sliderEnd.value);
+            fireChange();
+        }
+    };
 
-                    const percentEnd = (valEnd - min) / (max - min);
-                    const offsetEnd = `calc(${percentEnd * 100}% - ${percentEnd * 14}px + 7px)`;
-                    if (yearDisplayEnd) {
-                        yearDisplayEnd.style.left = offsetEnd;
-                        yearDisplayEnd.textContent = valEnd;
-                    }
+    if (toggleBtn) {
+        toggleBtn.onclick = () => {
+            isTimelineActive = !isTimelineActive;
+            const container = document.getElementById('floating-player-container');
+            if (isTimelineActive) {
+                toggleBtn.classList.add('active');
+                toggleBtn.style.background = 'rgba(255,255,255,0.15)';
+                toggleBtn.style.padding = '8px'; // Make it smaller
+                toggleBtn.title = "Desativar Explorador";
+                toggleBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
 
-                    const percentStart = (valStart - min) / (max - min);
-                    const offsetStart = `calc(${percentStart * 100}% - ${percentStart * 14}px + 7px)`;
-                    if (yearDisplayStart) {
-                        yearDisplayStart.style.left = offsetStart;
-                        yearDisplayStart.textContent = valStart;
-                    }
+                if (container) container.classList.add('active');
+                if (timelineControls) timelineControls.style.display = 'flex';
+                if (timelineSeparator) timelineSeparator.style.display = 'block';
 
-                    if (trackFill) {
-                        if (explorerMode === 'range') {
-                            trackFill.style.left = `calc(${percentStart * 100}%)`;
-                            trackFill.style.width = `calc(${(percentEnd - percentStart) * 100}%)`;
-                        } else if (explorerMode === 'yearly') {
-                            trackFill.style.left = `calc(${percentEnd * 100}%)`;
-                            trackFill.style.width = '0%';
-                        } else { // cumulative
-                            trackFill.style.left = '0%';
-                            trackFill.style.width = `calc(${percentEnd * 100}%)`;
-                        }
-                    }
-                };
+                playerYear = parseInt(sliderEnd.value);
+                updateSliderUI();
+                fireChange();
+            } else {
+                toggleBtn.classList.remove('active');
+                toggleBtn.style.background = 'var(--accent-blue)';
+                toggleBtn.style.padding = '8px 16px';
+                toggleBtn.title = "Ativar Explorador Temporal";
+                toggleBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> <span id="toggle-timeline-text" style="white-space: nowrap;">Ativar Explorador Temporal</span>`;
 
-                const getEffectiveRange = () => {
-                    if (!isTimelineActive) return { start: null, end: 2050 };
-                    const valEnd = parseInt(sliderEnd.value);
-                    const valStart = parseInt(sliderStart.value);
-                    
-                    if (explorerMode === 'yearly') {
-                        return { start: valEnd, end: valEnd };
-                    } else if (explorerMode === 'range') {
-                        return { start: valStart, end: valEnd };
-                    } else {
-                        return { start: minYear, end: valEnd };
-                    }
-                };
+                if (container) container.classList.remove('active');
+                if (timelineControls) timelineControls.style.display = 'none';
+                if (timelineSeparator) timelineSeparator.style.display = 'none';
 
-                const fireChange = () => {
-                    const range = getEffectiveRange();
-                    onYearChange(range.end, range.start);
-                };
-
-                const updateModeUI = () => {
-                    if (btnModeYearly) btnModeYearly.classList.toggle('active', explorerMode === 'yearly');
-                    if (btnModeCumulative) btnModeCumulative.classList.toggle('active', explorerMode === 'cumulative');
-                    if (btnModeRange) btnModeRange.classList.toggle('active', explorerMode === 'range');
-
-                    if (explorerMode === 'range') {
-                        sliderStart.style.pointerEvents = 'auto';
-                        sliderStart.style.opacity = '1';
-                        if (yearDisplayStart) yearDisplayStart.style.display = 'block';
-                    } else {
-                        sliderStart.style.pointerEvents = 'none';
-                        sliderStart.style.opacity = '0';
-                        if (yearDisplayStart) yearDisplayStart.style.display = 'none';
-                    }
-                    updateSliderUI();
-                };
-
-                if (btnModeYearly) {
-                    btnModeYearly.onclick = () => {
-                        explorerMode = 'yearly';
-                        updateModeUI();
-                        if (isTimelineActive) fireChange();
-                    };
-                }
-                if (btnModeCumulative) {
-                    btnModeCumulative.onclick = () => {
-                        explorerMode = 'cumulative';
-                        updateModeUI();
-                        if (isTimelineActive) fireChange();
-                    };
-                }
-                if (btnModeRange) {
-                    btnModeRange.onclick = () => {
-                        explorerMode = 'range';
-                        updateModeUI();
-                        if (isTimelineActive) fireChange();
-                    };
-                }
-
-                sliderEnd.oninput = () => {
-                    if (explorerMode === 'range' && parseInt(sliderEnd.value) < parseInt(sliderStart.value)) {
-                        sliderStart.value = sliderEnd.value;
-                    }
-                    updateSliderUI();
-                    if (isTimelineActive) {
-                        playerYear = parseInt(sliderEnd.value);
-                        fireChange();
-                    }
-                };
-
-                sliderStart.oninput = () => {
-                    if (explorerMode === 'range' && parseInt(sliderStart.value) > parseInt(sliderEnd.value)) {
-                        sliderEnd.value = sliderStart.value;
-                    }
-                    updateSliderUI();
-                    if (isTimelineActive) {
-                        playerYear = parseInt(sliderEnd.value);
-                        fireChange();
-                    }
-                };
-
-                if (toggleBtn) {
-                    toggleBtn.onclick = () => {
-                        isTimelineActive = !isTimelineActive;
-                        const container = document.getElementById('floating-player-container');
-                        if (isTimelineActive) {
-                            toggleBtn.classList.add('active');
-                            toggleBtn.style.background = 'rgba(255,255,255,0.15)';
-                            toggleBtn.style.padding = '8px'; // Make it smaller
-                            toggleBtn.title = "Desativar Explorador";
-                            toggleBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
-                            
-                            if (container) container.classList.add('active');
-                            if (timelineControls) timelineControls.style.display = 'flex';
-                            if (timelineSeparator) timelineSeparator.style.display = 'block';
-                            
-                            playerYear = parseInt(sliderEnd.value);
-                            updateSliderUI();
-                            fireChange();
-                        } else {
-                            toggleBtn.classList.remove('active');
-                            toggleBtn.style.background = 'var(--accent-blue)';
-                            toggleBtn.style.padding = '8px 16px';
-                            toggleBtn.title = "Ativar Explorador Temporal";
-                            toggleBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> <span id="toggle-timeline-text" style="white-space: nowrap;">Ativar Explorador Temporal</span>`;
-                            
-                            if (container) container.classList.remove('active');
-                            if (timelineControls) timelineControls.style.display = 'none';
-                            if (timelineSeparator) timelineSeparator.style.display = 'none';
-                            
-                            stopPlayer();
-                            playerYear = 2050; // Use a future year to "disable" the limit
-                            fireChange();
-                        }
-                    };
-                }
-
-                // Play/Pause
-                playBtn.onclick = () => {
-                    if (playerPlaying) {
-                        stopPlayer();
-                    } else {
-                        startPlayer(parseInt(sliderEnd.max), (y) => {
-                            sliderEnd.value = y;
-                            if (explorerMode === 'range' && parseInt(sliderEnd.value) < parseInt(sliderStart.value)) {
-                                sliderStart.value = sliderEnd.value;
-                            }
-                            updateSliderUI();
-                            const range = getEffectiveRange();
-                            onYearChange(range.end, range.start);
-                        }, sliderEnd, sliderStart);
-                    }
-                };
-
-                updateModeUI();
+                stopPlayer();
+                playerYear = 2050; // Use a future year to "disable" the limit
+                fireChange();
             }
+        };
+    }
 
-            function startPlayer(maxYear, onYearChange, sliderEnd, sliderStart) {
-                playerPlaying = true;
-                const playBtn = document.getElementById('player-play-btn');
-                const iconShape = document.getElementById('player-icon-shape');
-                if (playBtn) playBtn.classList.add('playing');
-                
-                // Change to pause icon
-                if (iconShape) iconShape.setAttribute('d', 'M8 5 L8 19 M16 5 L16 19');
-
-                // If at end, restart
-                if (parseInt(sliderEnd.value) >= maxYear) {
-                    playerYear = parseInt(sliderEnd.min);
-                    sliderEnd.value = playerYear;
-                    if (sliderStart && explorerMode === 'range') sliderStart.value = playerYear;
-                    onYearChange(playerYear);
-                } else {
-                    playerYear = parseInt(sliderEnd.value);
+    // Play/Pause
+    playBtn.onclick = () => {
+        if (playerPlaying) {
+            stopPlayer();
+        } else {
+            startPlayer(parseInt(sliderEnd.max), (y) => {
+                sliderEnd.value = y;
+                if (explorerMode === 'range' && parseInt(sliderEnd.value) < parseInt(sliderStart.value)) {
+                    sliderStart.value = sliderEnd.value;
                 }
+                updateSliderUI();
+                const range = getEffectiveRange();
+                onYearChange(range.end, range.start);
+            }, sliderEnd, sliderStart);
+        }
+    };
 
-                playerInterval = setInterval(() => {
-                    playerYear++;
-                    if (playerYear > maxYear) {
-                        stopPlayer();
-                    } else {
-                        onYearChange(playerYear);
-                    }
-                }, 800);
-            }
+    updateModeUI();
+}
+
+function startPlayer(maxYear, onYearChange, sliderEnd, sliderStart) {
+    playerPlaying = true;
+    const playBtn = document.getElementById('player-play-btn');
+    const iconShape = document.getElementById('player-icon-shape');
+    if (playBtn) playBtn.classList.add('playing');
+
+    // Change to pause icon
+    if (iconShape) iconShape.setAttribute('d', 'M8 5 L8 19 M16 5 L16 19');
+
+    // If at end, restart
+    if (parseInt(sliderEnd.value) >= maxYear) {
+        playerYear = parseInt(sliderEnd.min);
+        sliderEnd.value = playerYear;
+        if (sliderStart && explorerMode === 'range') sliderStart.value = playerYear;
+        onYearChange(playerYear);
+    } else {
+        playerYear = parseInt(sliderEnd.value);
+    }
+
+    playerInterval = setInterval(() => {
+        playerYear++;
+        if (playerYear > maxYear) {
+            stopPlayer();
+        } else {
+            onYearChange(playerYear);
+        }
+    }, 800);
+}
 
 function stopPlayer() {
     playerPlaying = false;
@@ -910,7 +910,7 @@ function stopPlayer() {
     const playBtn = document.getElementById('player-play-btn');
     const iconShape = document.getElementById('player-icon-shape');
     if (playBtn) playBtn.classList.remove('playing');
-    
+
     // Change back to play icon (minimalist triangle)
     if (iconShape) iconShape.setAttribute('d', 'M6 4 L18 12 L6 20 Z');
 }
@@ -933,7 +933,7 @@ export function renderChips(data, selectedMethod = null, selectedType = null, on
     const typeWrap = document.createElement('div');
     typeWrap.className = 'chips-grid';
     typeWrap.style.marginBottom = '8px';
-    
+
     ['Gigante Gasoso', 'Netuniano', 'Super-Terra', 'Terrestre'].forEach(item => {
         const color = getTypeColor(item);
         const isActive = selectedType === item;
@@ -957,7 +957,7 @@ export function renderChips(data, selectedMethod = null, selectedType = null, on
     // Wrap for Method
     const methodWrap = document.createElement('div');
     methodWrap.className = 'chips-grid';
-    
+
     ['Trânsito', 'Velocidade Radial', 'Micro-lente', 'Imagem Direta', 'Pulsar Timing'].forEach(item => {
         const color = getMethodColor(item);
         const isActive = selectedMethod === item;

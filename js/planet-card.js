@@ -687,7 +687,7 @@ export class PlanetCard {
 
         const mPerS2 = g * 9.81;
         if (this.fields.gravValue) {
-            this.fields.gravValue.innerHTML = `<strong>${Math.round(mPerS2)}</strong> <span style="font-size: 13px; font-weight: 600; color: var(--text-dim); margin-left: 2px;">m/s²</span>`;
+            this.fields.gravValue.innerHTML = `<strong>${mPerS2.toFixed(2).replace('.', ',')}</strong> <span style="font-size: 13px; font-weight: 600; color: var(--text-dim); margin-left: 2px;">m/s²</span>`;
         }
 
         let desc = '';
