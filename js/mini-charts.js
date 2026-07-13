@@ -622,7 +622,7 @@ export function updateBubbleChart(year, startYear = null) {
         })
         .on('mouseenter', (e, d) => {
             d3.select(e.currentTarget).attr('r', 9).attr('opacity', 1).attr('stroke', '#fff');
-            showTooltip(e, d.name, `${d.year} — ${d[fieldKey]}<br>Massa (Terra): ${fmtNumber(d.mass)} M⊕<br>Raio: ${fmtNumber(d.radius)} R⊕`);
+            showTooltip(e, d.name, `${d.year} — ${d[fieldKey]}<br>Massa: ${fmtNumber(d.mass)} M⊕<br>Raio: ${fmtNumber(d.radius)} R⊕`);
             if (window.starMapHighlightByFilter) window.starMapHighlightByFilter(p => p.id === d.id);
         })
         .on('mouseleave', (e, d) => {

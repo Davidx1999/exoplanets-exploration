@@ -624,8 +624,30 @@ export class PlanetCard {
 
         this._setField('year', planet.year, '', { missing: 'Não estimado' });
 
-        this._setField('mass', planet.mass, ' M', { decimals: 2, missing: 'Não estimado' });
-        this._setField('radius', planet.radius, ' R', { decimals: 2, missing: 'Não estimado' });
+        // Massa: "X Massas da Terra"
+        if (this.fields.mass) {
+            if (planet.mass !== null && planet.mass !== undefined) {
+                const massFormatted = planet.mass.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+                this.fields.mass.textContent = `${massFormatted} Massas da Terra`;
+                this.fields.mass.classList.remove('val-missing');
+            } else {
+                this.fields.mass.textContent = 'Não estimado';
+                this.fields.mass.classList.add('val-missing');
+            }
+        }
+
+
+        // Raio: "X Raios da Terra"
+        if (this.fields.radius) {
+            if (planet.radius !== null && planet.radius !== undefined) {
+                const radiusFormatted = planet.radius.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+                this.fields.radius.textContent = `${radiusFormatted} Raios da Terra`;
+                this.fields.radius.classList.remove('val-missing');
+            } else {
+                this.fields.radius.textContent = 'Não estimado';
+                this.fields.radius.classList.add('val-missing');
+            }
+        }
         
         if (planet.distLY !== null && planet.distLY !== undefined) {
             this._setFieldDirect('dist', `${planet.distLY.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} anos-luz`);
@@ -692,11 +714,13 @@ export class PlanetCard {
 
         let desc = '';
         if (g > 1) {
-            desc = `Este planeta possui uma gravidade ${g.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} vezes mais forte que a gravidade da Terra.`;
+            const pctMaior = Math.round((g - 1) * 100);
+            desc = `A gravidade é cerca de ${pctMaior}% maior que a da Terra.`;
         } else if (g < 1) {
-            desc = `Este planeta possui uma gravidade ${(1 / g).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} vezes mais fraca que a gravidade da Terra.`;
+            const pctMenor = Math.round((1 - g) * 100);
+            desc = `A gravidade é cerca de ${pctMenor}% menor que a da Terra.`;
         } else {
-            desc = `Este planeta possui uma gravidade idêntica à gravidade da Terra.`;
+            desc = `A gravidade é idêntica à da Terra.`;
         }
 
         let pct = (g / 3) * 100; 
